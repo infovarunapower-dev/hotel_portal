@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hotel Management Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="bg-gradient-to-br from-blue-100 via-white to-blue-200 min-h-screen flex flex-col items-center p-6"
+  >
+    <h1 class="text-4xl font-bold mb-10 text-gray-800">
+      🏨 Hotel Management Portal
+    </h1>
+
+    <!-- MAIN MENU -->
+    <div
+      id="mainMenu"
+      class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl"
+    >
+      <button
+        onclick="showSection('housekeeping')"
+        class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center"
+      >
+        🧹
+        <h2 class="text-xl font-semibold mt-2">Housekeeping</h2>
+      </button>
+      <button
+        onclick="showSection('travel')"
+        class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center"
+      >
+        🚗
+        <h2 class="text-xl font-semibold mt-2">Travel</h2>
+      </button>
+      <button
+        onclick="showSection('food')"
+        class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center"
+      >
+        🍽️
+        <h2 class="text-xl font-semibold mt-2">Food Menu</h2>
+      </button>
+    </div>
+
+    <!-- CATEGORY SECTION -->
+    <div
+      id="categorySection"
+      class="hidden w-full max-w-2xl bg-white p-8 mt-10 rounded-2xl shadow-xl"
+    >
+      <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+
+      <!-- Sub-options will appear here -->
+      <div
+        id="optionsList"
+        class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+      ></div>
+
+      <!-- Request Form -->
+      <form id="requestForm" class="space-y-4">
+        <input
+          id="guestName"
+          type="text"
+          placeholder="Your Name"
+          class="border w-full p-3 rounded-md"
+          required
+        />
+        <input
+          id="roomNumber"
+          type="number"
+          placeholder="Room Number"
+          class="border w-full p-3 rounded-md"
+          required
+        />
+        <textarea
+          id="requestDetails"
+          placeholder="Additional details..."
+          class="border w-full p-3 rounded-md"
+        ></textarea>
+
+        <button
+          type="submit"
+          class="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 w-full"
+        >
+          Submit Request
+        </button>
+        <button
+          type="button"
+          onclick="goBack()"
+          class="text-gray-500 underline w-full mt-2"
+        >
+          ⬅️ Back
+        </button>
+      </form>
+    </div>
+
+    <script>
+      let currentCategory = "";
+      let currentService = "";
+
+      const services = {
+        housekeeping: {
+          title: "🧹 Housekeeping Services",
+          options: [
+            "Room Cleaning",
+            "Laundry Service",
+            "Extra Towels",
+            "Room Supplies",
+            "Other Requests",
+          ],
+        },
+        travel: {
+          title: "🚗 Travel Assistance",
+          options: [
+            "Airport Pickup",
+            "Local Cab",
+            "Tour Guide",
+            "Car Rental",
+            "Other Travel Help",
+          ],
+        },
+        food: {
+          title: "🍽️ Food Menu",
+          options: [
+            "Breakfast Order",
+            "Lunch Order",
+            "Dinner Order",
+            "Snacks",
+            "Beverages",
+          ],
+        },
+      };
+
+      function showSection(category) {
+        currentCategory = category;
+        currentService = "";
+        const section = services[category];
+        document.getElementById("mainMenu").classList.add("hidden");
+        document.getElementById("categorySection").classList.remove("hidden");
+        document.getElementById("categoryTitle").innerText = section.title;
+
+        const list = document.getElementById("optionsList");
+        list.innerHTML = "";
+        section.options.forEach((opt) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className =
+            "bg-gray-100 hover:bg-blue-100 font-semibold py-3 rounded-lg shadow-sm";
+          btn.innerText = opt;
+          btn.onclick = () => {
+            currentService = opt;
+            document
+              .querySelectorAll("#optionsList button")
+              .forEach((b) => b.classList.remove("bg-blue-200"));
+            btn.classList.add("bg-blue-200");
+          };
+          list.appendChild(btn);
+        });
+      }
+
+      function goBack() {
+        document.getElementById("mainMenu").classList.remove("hidden");
+        document.getElementById("categorySection").classList.add("hidden");
+      }
+
+      document
+        .getElementById("requestForm")
+        .addEventListener("submit", (e) => {
+          e.preventDefault();
+          const name = guestName.value.trim();
+          const room = roomNumber.value.trim();
+          const details = requestDetails.value.trim();
+
+          const request = {
+            category: currentCategory,
+            service: currentService || "General Request",
+            name,
+            room,
+            details,
+            time: new Date().toLocaleString(),
+          };
+
+          const allRequests = JSON.parse(
+            localStorage.getItem("requests") || "[]"
+          );
+          allRequests.push(request);
+          localStorage.setItem("requests", JSON.stringify(allRequests));
+
+          alert("✅ Request submitted successfully!");
+          e.target.reset();
+          goBack();
+        });
+    </script>
+  </body>
+</html>

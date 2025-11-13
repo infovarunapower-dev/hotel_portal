@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen p-6">
+    <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">
+      🧾 Admin Dashboard
+    </h1>
+
+    <!-- Tabs -->
+    <div class="flex justify-center mb-6 space-x-4">
+      <button
+        class="tab-btn bg-blue-500 text-white px-5 py-2 rounded-lg hover:bg-blue-600"
+        onclick="showTab('housekeeping')"
+        id="tab-housekeeping"
+      >
+        🧹 Housekeeping
+      </button>
+      <button
+        class="tab-btn bg-gray-300 text-gray-800 px-5 py-2 rounded-lg hover:bg-blue-200"
+        onclick="showTab('travel')"
+        id="tab-travel"
+      >
+        🚗 Travel
+      </button>
+      <button
+        class="tab-btn bg-gray-300 text-gray-800 px-5 py-2 rounded-lg hover:bg-blue-200"
+        onclick="showTab('food')"
+        id="tab-food"
+      >
+        🍽️ Food
+      </button>
+    </div>
+
+    <!-- Clear Button -->
+    <div class="flex justify-center mb-8">
+      <button
+        onclick="clearRequests()"
+        class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600"
+      >
+        🗑️ Clear All Requests
+      </button>
+    </div>
+
+    <!-- Request Sections -->
+    <div id="housekeeping" class="request-tab max-w-4xl mx-auto"></div>
+    <div id="travel" class="request-tab hidden max-w-4xl mx-auto"></div>
+    <div id="food" class="request-tab hidden max-w-4xl mx-auto"></div>
+
+    <script>
+      // Load requests
+      function loadRequests() {
+        const requests = JSON.parse(localStorage.getItem("requests") || "[]");
+
+        // Group by category
+        const grouped = { housekeeping: [], travel: [], food: [] };
+        requests.forEach((req) => {
+          if (grouped[req.category]) grouped[req.category].push(req);
+        });
+
+        // Render each category
+        Object.keys(grouped).forEach((cat) => {
+          const container = document.getElementById(cat);
+          container.innerHTML = "";
+          if (grouped[cat].length === 0) {
+            container.innerHTML = `<p class='text-center text-gray-500 text-lg'>No ${cat} requests yet.</p>`;
+          } else {
+            grouped[cat]
+              .slice()
+              .reverse()
+              .forEach((req, index) => {
+                const card = document.createElement("div");
+                card.className =
+                  "bg-white p-5 mb-4 rounded-xl shadow-md border border-gray-200";
+                card.innerHTML = `
+                  <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-blue-700">${req.service}</h3>
+                    <button
+                      onclick="deleteRequest('${cat}', ${index})"
+                      class="text-sm bg-red-100 text-red-600 px-3 py-1 rounded-md hover:bg-red-200"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  <p><strong>Guest:</strong> ${req.name}</p>
+                  <p><strong>Room:</strong> ${req.room}</p>
+                  <p><strong>Details:</strong> ${req.details}</p>
+                  <p class="text-sm text-gray-500 mt-2">${req.time}</p>
+                `;
+                container.appendChild(card);
+              });
+          }
+        });
+      }
+
+      // Delete single request
+      function deleteRequest(category, index) {
+        const all = JSON.parse(localStorage.getItem("requests") || "[]");
+        const filtered = all.filter((req) => req.category === category);
+        const others = all.filter((req) => req.category !== category);
+        filtered.splice(filtered.length - 1 - index, 1);
+        localStorage.setItem("requests", JSON.stringify([...others, ...filtered]));
+        loadRequests();
+      }
+
+      // Clear all requests
+      function clearRequests() {
+        if (confirm("Are you sure you want to delete all requests?")) {
+          localStorage.removeItem("requests");
+          loadRequests();
+        }
+      }
+
+      // Tab switching
+      function showTab(tab) {
+        document
+          .querySelectorAll(".request-tab")
+          .forEach((el) => el.classList.add("hidden"));
+        document.getElementById(tab).classList.remove("hidden");
+
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((b) => (b.className = b.className.replace("bg-blue-500", "bg-gray-300").replace("text-white", "text-gray-800")));
+        document
+          .getElementById("tab-" + tab)
+          .classList.replace("bg-gray-300", "bg-blue-500");
+        document
+          .getElementById("tab-" + tab)
+          .classList.replace("text-gray-800", "text-white");
+      }
+
+      // Default view
+      showTab("housekeeping");
+      loadRequests();
+    </script>
+  </body>
+</html>
