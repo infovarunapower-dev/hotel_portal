@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Travel Desk Request</title>
+  <style>
+    body { 
+        font-family: Arial; 
+        padding: 20px; 
+        background: #f0f0f0;
+    }
+    h2 { color: #333; }
+    button { 
+        padding: 12px 20px; 
+        background: #007bff; 
+        color: white; 
+        border: none; 
+        border-radius: 5px; 
+        cursor: pointer; 
+        width: 100%;
+        font-size: 16px;
+    }
+    button:hover { background: #0056b3; }
+    input, select { 
+        padding: 10px; 
+        width: 100%; 
+        margin-bottom: 12px; 
+        border: 1px solid #ccc; 
+        border-radius: 4px;
+    }
+    .container {
+        max-width: 400px; 
+        margin: auto; 
+        background: #fff; 
+        padding: 25px; 
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+<h2>Travel Desk Request</h2>
+
+<label>Room Number:</label>
+<input id="room" placeholder="Enter your room number" />
+
+<label>Select Travel Service:</label>
+<select id="service">
+  <option>Cab Booking</option>
+  <option>Airport Drop / Pickup</option>
+  <option>City Sightseeing</option>
+  <option>Outstation Travel</option>
+  <option>Bus Ticket Booking</option>
+  <option>Train Ticket Booking</option>
+</select>
+
+<button onclick="submitRequest()">Submit Travel Request</button>
+</div>
+
+<script>
+function submitRequest() {
+    let room = document.getElementById("room").value;
+
+    if(room.trim() === ""){
+        alert("Please enter your room number");
+        return;
+    }
+
+    let req = {
+        type: "Travel",
+        room: room,
+        service: document.getElementById("service").value,
+        status: "Pending",
+        assigned_to: "",
+        time: new Date().toLocaleString()
+    };
+
+    let list = JSON.parse(localStorage.getItem("requests") || "[]");
+    list.push(req);
+    localStorage.setItem("requests", JSON.stringify(list));
+
+    alert("Travel request submitted!");
+    location.href = "index.html";
+}
+</script>
+
+</body>
+</html>
