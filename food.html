@@ -75,8 +75,49 @@
         function placeOrder(itemName) {
             const statusBox = document.getElementById("orderStatus");
             statusBox.style.display = "block";
-            statusBox.innerHTML = "🍽️ Order placed for <b>" + itemName + "</b>. Staff will deliver shortly!";
+            statusBox.innerHTML =
+                "🍽️ Order placed for <b>" +
+                itemName +
+                "</b>. Staff will deliver shortly!";
         }
+
+        function loadMenu() {
+            // Load menu data from localStorage
+            const menuData =
+                JSON.parse(localStorage.getItem("foodMenu")) || {};
+
+            const container = document.getElementById("menuContainer");
+            container.innerHTML = ""; // clear default content
+
+            // Loop categories
+            for (const category in menuData) {
+                const section = document.createElement("div");
+
+                section.innerHTML = `
+                    <h2>${category} Menu</h2>
+                    <div class="menu-section" id="sec-${category}"></div>
+                `;
+
+                container.appendChild(section);
+
+                const sectionDiv = section.querySelector(
+                    "#sec-" + CSS.escape(category)
+                );
+
+                // Loop items in category
+                menuData[category].forEach((item) => {
+                    const div = document.createElement("div");
+                    div.className = "item";
+                    div.innerHTML = `
+                        <span>${item.name} — ₹${item.price}</span>
+                        <button onclick="placeOrder('${item.name}')">Order</button>
+                    `;
+                    sectionDiv.appendChild(div);
+                });
+            }
+        }
+
+        window.onload = loadMenu;
     </script>
 </head>
 
@@ -86,75 +127,14 @@
     Hotel Food Ordering
 </header>
 
-<div class="container">
+<div class="container" id="menuContainer">
 
-    <!-- Breakfast -->
-    <h2>Breakfast Menu</h2>
-    <div class="menu-section">
-
-        <div class="item">
-            <span>Idli & Sambar</span>
-            <button onclick="placeOrder('Idli & Sambar')">Order</button>
-        </div>
-
-        <div class="item">
-            <span>Dosa</span>
-            <button onclick="placeOrder('Dosa')">Order</button>
-        </div>
-
-        <div class="item">
-            <span>Poori & Aloo</span>
-            <button onclick="placeOrder('Poori & Aloo')">Order</button>
-        </div>
-
-    </div>
-
-    <!-- Lunch -->
-    <h2>Lunch Menu</h2>
-    <div class="menu-section">
-
-        <div class="item">
-            <span>Veg Thali</span>
-            <button onclick="placeOrder('Veg Thali')">Order</button>
-        </div>
-
-        <div class="item">
-            <span>Chicken Curry with Rice</span>
-            <button onclick="placeOrder('Chicken Curry with Rice')">Order</button>
-        </div>
-
-        <div class="item">
-            <span>Fish Fry Meal</span>
-            <button onclick="placeOrder('Fish Fry Meal')">Order</button>
-        </div>
-
-    </div>
-
-    <!-- Dinner -->
-    <h2>Dinner Menu</h2>
-    <div class="menu-section">
-
-        <div class="item">
-            <span>Chapati & Paneer</span>
-            <button onclick="placeOrder('Chapati & Paneer')">Order</button>
-        </div>
-
-        <div class="item">
-            <span>Fried Rice</span>
-            <button onclick="placeOrder('Fried Rice')">Order</button>
-        </div>
-
-        <div class="item">
-            <span>Noodels</span>
-            <button onclick="placeOrder('Noodels')">Order</button>
-        </div>
-
-    </div>
-
-    <!-- Output Message -->
-    <div id="orderStatus"></div>
+    <!-- Menu will load dynamically here -->
 
 </div>
+
+<!-- Output Message -->
+<div id="orderStatus"></div>
 
 </body>
 </html>
