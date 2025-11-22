@@ -130,7 +130,29 @@ class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hove
 <script>
 
 /* =====================================================
-   GUEST DETAILS SAVE
+   AUTO LOAD IF USER ALREADY LOGGED IN
+===================================================== */
+window.addEventListener("DOMContentLoaded", () => {
+    const savedName = localStorage.getItem("guestName");
+    const savedRoom = localStorage.getItem("guestRoom");
+
+    if (savedName && savedRoom) {
+        // hide form
+        document.getElementById("guestFormSection").classList.add("hidden");
+
+        // show main portal
+        document.getElementById("mainPortal").classList.remove("hidden");
+        document.getElementById("mainMenu").classList.remove("hidden");
+        document.getElementById("categorySection").classList.add("hidden");
+
+        // welcome text
+        document.getElementById("welcomeText").innerText =
+            `Welcome, ${savedName} (Room ${savedRoom})`;
+    }
+});
+
+/* =====================================================
+   SAVE GUEST DETAILS (ASK ONLY 1 TIME)
 ===================================================== */
 function saveGuestDetails() {
     const name = document.getElementById("guestNameInput").value.trim();
@@ -286,12 +308,9 @@ document.getElementById("requestForm").onsubmit = function (e) {
 /* =====================================================
    CART SYSTEM
 ===================================================== */
-function getCart() {
-    return JSON.parse(localStorage.getItem("cart") || "[]");
-}
-function setCart(c) {
-    localStorage.setItem("cart", JSON.stringify(c));
-}
+
+function getCart() { return JSON.parse(localStorage.getItem("cart") || "[]"); }
+function setCart(c) { localStorage.setItem("cart", JSON.stringify(c)); }
 
 const cartPanel = document.getElementById("cartPanel");
 const cartOverlay = document.getElementById("cartOverlay");
