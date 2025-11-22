@@ -12,7 +12,7 @@
       --sidebar:#ffffff;
     }
     *{box-sizing:border-box}
-    body{font-family:Arial,margin:0;background:var(--bg);color:#111}
+    body{font-family:Arial;margin:0;background:var(--bg);color:#111}
     header{background:var(--blue);color:#fff;padding:14px 20px;display:flex;align-items:center}
     header .title{font-size:18px;font-weight:700}
     .layout{display:flex;min-height:calc(100vh - 56px)}
@@ -80,14 +80,21 @@
   </header>
 
   <div class="layout">
-    <!-- Sidebar (Style 3: Full card) -->
+
+    <!-- Sidebar (Style 3) -->
     <aside class="sidebar">
       <h3>ADMIN MENU</h3>
+
       <div class="sb-item active" data-action="dashboard">📋 Dashboard</div>
       <div class="sb-item" data-action="assignments">🧾 Assignments</div>
       <div class="sb-item" data-action="add-staff">➕ Add Staff</div>
       <div class="sb-item" data-action="add-food">🍽 Add Food Menu</div>
+
+      <!-- ⭐ NEW: Generate QR -->
+      <div class="sb-item" data-action="generate-qr">📱 Generate QR Code</div>
+
       <div class="sb-item" data-action="settings">⚙ Settings</div>
+
       <div style="height:1px;background:#eef2f7;margin:12px 0"></div>
       <div class="sb-item" id="logoutBtn">🔒 Logout</div>
 
@@ -97,7 +104,8 @@
 
     <!-- Main content -->
     <main class="wrap">
-      <!-- Controls -->
+
+      <!-- Filters -->
       <div class="controls" id="controlsTop">
         <div class="tabs" id="tabs">
           <div class="tab active" data-cat="all">All</div>
@@ -106,7 +114,8 @@
           <div class="tab" data-cat="Food">🍽️ Food</div>
         </div>
 
-        <input type="text" id="searchInput" placeholder="Search by name, room, or service..." style="flex:1"/>
+        <input type="text" id="searchInput" placeholder="Search..." style="flex:1"/>
+
         <select id="filterStatus">
           <option value="">All Status</option>
           <option value="Pending">Pending</option>
@@ -124,10 +133,17 @@
       </div>
 
       <!-- Table -->
-      <table id="reqTable" aria-live="polite">
+      <table id="reqTable">
         <thead>
           <tr>
-            <th>#</th><th>Category</th><th>Service</th><th>Guest</th><th>Room</th><th>Time</th><th>Status</th><th>Assign / Action</th>
+            <th>#</th>
+            <th>Category</th>
+            <th>Service</th>
+            <th>Guest</th>
+            <th>Room</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Assign / Action</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -135,47 +151,44 @@
     </main>
   </div>
 
-  <!-- Add Staff Modal -->
+  <!-- Modal (shared) -->
   <div class="modal-backdrop" id="modalBackdrop">
-    <div class="modal" id="modalContent">
-      <!-- content injected -->
-    </div>
+    <div class="modal" id="modalContent"></div>
   </div>
 
-<script>
-/* ---------- Helpers & Storage ---------- */
-if(!localStorage.getItem('staffList')) localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
-if(!localStorage.getItem('foodMenu')) localStorage.setItem('foodMenu', JSON.stringify({
-  "Breakfast": [{"name":"Idli & Sambar","price":"80"},{"name":"Dosa","price":"90"}],
-  "Lunch": [{"name":"Veg Thali","price":"150"},{"name":"Chicken Curry","price":"180"}],
-  "Dinner": [{"name":"Fried Rice","price":"140"}]
-}));
+  <!-- QR Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
+<script>
+/* -------------------------------
+   Storage Helpers
+--------------------------------*/
 function getRequests(){ return JSON.parse(localStorage.getItem('requests') || '[]'); }
 function setRequests(arr){ localStorage.setItem('requests', JSON.stringify(arr)); }
-function getStaff(){ return JSON.parse(localStorage.getItem('staffList') || '[]'); }
+
+function getStaff(){
+  if(!localStorage.getItem('staffList'))
+    localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
+  return JSON.parse(localStorage.getItem('staffList') || '[]');
+}
 function setStaff(arr){ localStorage.setItem('staffList', JSON.stringify(arr)); }
-function getFood(){ return JSON.parse(localStorage.getItem('foodMenu') || '{}'); }
+
+function getFood(){
+  if(!localStorage.getItem('foodMenu'))
+    localStorage.setItem('foodMenu', JSON.stringify({
+      "Breakfast":[{"name":"Idli","price":"60"}],
+      "Lunch":[{"name":"Thali","price":"150"}]
+    }));
+  return JSON.parse(localStorage.getItem('foodMenu') || '{}');
+}
 function setFood(obj){ localStorage.setItem('foodMenu', JSON.stringify(obj)); }
 
-/* ---------- UI helpers ---------- */
-function statusTag(s){
-  s = s || 'Pending';
-  const safeClass = 'status-' + s.replace(/ /g,'-');
-  return `<span class="status-tag ${safeClass}">${s}</span>`;
-}
-
-function updateStats(){
-  const all = getRequests();
-  const total = all.length;
-  const assigned = all.filter(r=>r.status==='Assigned').length;
-  const ignored = all.filter(r=>r.status==='Ignored').length;
-  document.getElementById('statsArea').innerText = `Requests: ${total} · Assigned: ${assigned} · Ignored: ${ignored}`;
-}
-
-/* ---------- Modal ---------- */
+/* -------------------------------
+   Modal utilities
+--------------------------------*/
 const modalBackdrop = document.getElementById('modalBackdrop');
-const modalContent = document.getElementById('modalContent');
+const modalContent  = document.getElementById('modalContent');
+
 function openModal(html){
   modalContent.innerHTML = html;
   modalBackdrop.style.display = 'flex';
@@ -184,53 +197,84 @@ function closeModal(){
   modalBackdrop.style.display = 'none';
   modalContent.innerHTML = '';
 }
-modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) closeModal(); });
+modalBackdrop.addEventListener('click', (e)=>{
+  if(e.target===modalBackdrop) closeModal();
+});
 
-/* ---------- Populate staff filter ---------- */
+/* -------------------------------
+   Stats
+--------------------------------*/
+function updateStats() {
+  const all = getRequests();
+  const total = all.length;
+  const assigned = all.filter(r => r.status==='Assigned').length;
+  const ignored  = all.filter(r => r.status==='Ignored').length;
+
+  document.getElementById('statsArea').textContent =
+    `Requests: ${total} · Assigned: ${assigned} · Ignored: ${ignored}`;
+}
+
+/* -------------------------------
+   Populate staff filter
+--------------------------------*/
 function populateStaffFilter(){
   const staff = getStaff();
   const sf = document.getElementById('staffFilter');
-  sf.innerHTML = '<option value="">All Staff</option>' + staff.map(s=>`<option value="${s}">${s}</option>`).join('');
+  sf.innerHTML = '<option value="">All Staff</option>' +
+    staff.map(s=>`<option value="${s}">${s}</option>`).join('');
 }
 
-/* ---------- Render table ---------- */
+/* -------------------------------
+   Render table
+--------------------------------*/
+function statusTag(s){
+  s = s||'Pending';
+  return `<span class="status-tag status-${s.replace(/ /g,'-')}">${s}</span>`;
+}
+
 function render(){
-  const all = getRequests();
   const tbody = document.querySelector('#reqTable tbody');
   tbody.innerHTML = '';
-  const search = document.getElementById('searchInput').value.trim().toLowerCase();
+
+  const all = getRequests();
+  const search = document.getElementById('searchInput').value.toLowerCase();
   const statusFilter = document.getElementById('filterStatus').value;
-  const staffFilter = document.getElementById('staffFilter').value;
+  const staffFilter  = document.getElementById('staffFilter').value;
   const activeTab = document.querySelector('.tab.active').dataset.cat;
 
   const filtered = all.filter(r=>{
-    if(activeTab!=='all' && r.type !== activeTab) return false;
-    if(statusFilter && r.status !== statusFilter) return false;
-    if(staffFilter && (r.assigned_to || '') !== staffFilter) return false;
-    if(!search) return true;
-    return (r.name||'').toLowerCase().includes(search) || (r.room||'').toString().toLowerCase().includes(search) || (r.service||'').toLowerCase().includes(search);
+    if(activeTab!=='all' && r.type!==activeTab) return false;
+    if(statusFilter && r.status!==statusFilter) return false;
+    if(staffFilter && (r.assigned_to||'')!==staffFilter) return false;
+    if(search && !(
+      (r.name||'').toLowerCase().includes(search) ||
+      (r.room||'').toString().includes(search) ||
+      (r.service||'').toLowerCase().includes(search)
+    )) return false;
+    return true;
   });
 
-  filtered.slice().reverse().forEach((r, i) => {
-    const allIndex = (all.length - 1) - i;
+  filtered.slice().reverse().forEach((r,i)=>{
+    const idx = all.length - 1 - i;
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${allIndex+1}</td>
+      <td>${idx+1}</td>
       <td>${r.type}</td>
       <td>${r.service}</td>
-      <td>${r.name || '-'}</td>
-      <td>${r.room || '-'}</td>
-      <td>${r.time || '-'}</td>
+      <td>${r.name||'-'}</td>
+      <td>${r.room||'-'}</td>
+      <td>${r.time||''}</td>
       <td>${statusTag(r.status)}</td>
       <td>
-        <select class="select-staff" data-idx="${allIndex}">
+        <select class="select-staff" data-idx="${idx}">
           <option value="">Assign staff</option>
-          ${getStaff().map(s=>`<option ${r.assigned_to===s?'selected':''} value="${s}">${s}</option>`).join('')}
+          ${getStaff().map(s=>`<option value="${s}" ${r.assigned_to===s?'selected':''}>${s}</option>`)}
         </select>
-        <button class="btn assign" data-assign="${allIndex}">Assign</button>
-        <button class="btn inprogress" data-inprogress="${allIndex}">Start</button>
-        <button class="btn complete" data-complete="${allIndex}">Complete</button>
-        <button class="btn ignore" data-ignore="${allIndex}">Ignore</button>
+
+        <button class="btn assign" data-assign="${idx}">Assign</button>
+        <button class="btn inprogress" data-inprogress="${idx}">Start</button>
+        <button class="btn complete" data-complete="${idx}">Complete</button>
+        <button class="btn ignore" data-ignore="${idx}">Ignore</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -239,160 +283,258 @@ function render(){
   updateStats();
 }
 
-/* ---------- Event delegation for actions ---------- */
-document.addEventListener('click', (e) => {
-  if(e.target.dataset.assign){
-    const idx = parseInt(e.target.dataset.assign);
-    const select = document.querySelector(`select.select-staff[data-idx="${idx}"]`);
-    const staff = select.value;
-    if(!staff){ alert('Choose staff to assign'); return; }
+/* -------------------------------
+   Table Action Delegation
+--------------------------------*/
+document.addEventListener('click',(e)=>{
+
+  const el = e.target;
+  if(el.dataset.assign){
+    const idx = +el.dataset.assign;
+    const staffSel = document.querySelector(`select.select-staff[data-idx="${idx}"]`);
+    const staff = staffSel.value;
+    if(!staff) return alert('Choose staff');
     const all = getRequests();
-    all[idx].status = 'Assigned';
-    all[idx].assigned_to = staff;
-    setRequests(all);
-    render();
+    all[idx].status='Assigned';
+    all[idx].assigned_to=staff;
+    setRequests(all); render();
   }
-  if(e.target.dataset.inprogress){
-    const idx = parseInt(e.target.dataset.inprogress);
-    const all = getRequests(); all[idx].status='In Progress'; setRequests(all); render();
+
+  if(el.dataset.inprogress){
+    const idx = +el.dataset.inprogress;
+    const all = getRequests();
+    all[idx].status='In Progress';
+    setRequests(all); render();
   }
-  if(e.target.dataset.complete){
-    const idx = parseInt(e.target.dataset.complete);
-    const all = getRequests(); all[idx].status='Completed'; setRequests(all); render();
+
+  if(el.dataset.complete){
+    const idx = +el.dataset.complete;
+    const all = getRequests();
+    all[idx].status='Completed';
+    setRequests(all); render();
   }
-  if(e.target.dataset.ignore){
-    const idx = parseInt(e.target.dataset.ignore);
-    if(!confirm('Mark this request as Ignored?')) return;
-    const all = getRequests(); all[idx].status='Ignored'; setRequests(all); render();
+
+  if(el.dataset.ignore){
+    const idx = +el.dataset.ignore;
+    if(!confirm('Ignore this request?')) return;
+    const all = getRequests();
+    all[idx].status='Ignored';
+    setRequests(all); render();
   }
 });
 
-/* ---------- Search / filters / tabs ---------- */
-document.getElementById('tabs').addEventListener('click', (ev) => {
-  if(!ev.target.classList.contains('tab')) return;
+/* -------------------------------
+   Clear ignored
+--------------------------------*/
+document.getElementById('clearIgnoredBtn').onclick = ()=>{
+  if(!confirm('Clear all ignored requests?')) return;
+  const all = getRequests().filter(r=>r.status!=='Ignored');
+  setRequests(all); render();
+};
+
+/* -------------------------------
+   Tabs
+--------------------------------*/
+document.getElementById('tabs').addEventListener('click',(e)=>{
+  if(!e.target.classList.contains('tab')) return;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  ev.target.classList.add('active'); render();
-});
-document.getElementById('searchInput').addEventListener('input', render);
-document.getElementById('filterStatus').addEventListener('change', render);
-document.getElementById('staffFilter').addEventListener('change', render);
-
-/* ---------- Sidebar actions ---------- */
-document.querySelectorAll('.sb-item').forEach(item=>{
-  item.addEventListener('click', ()=> {
-    document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
-    item.classList.add('active');
-    const action = item.dataset.action;
-    if(action === 'dashboard'){ document.querySelector('.tab[data-cat="all"]').click(); window.scrollTo({top:0,behavior:'smooth'}); }
-    else if(action === 'assignments'){ document.querySelector('.tab[data-cat="all"]').click(); window.scrollTo({top:0,behavior:'smooth'}); }
-    else if(action === 'add-staff'){ openAddStaff(); }
-    else if(action === 'add-food'){ openAddFood(); }
-    else if(action === 'settings'){ openSettings(); }
-  });
-});
-
-/* ---------- Clear Ignored ---------- */
-document.getElementById('clearIgnoredBtn').addEventListener('click', ()=>{
-  if(!confirm('Remove all Ignored requests permanently?')) return;
-  let all = getRequests();
-  all = all.filter(r=>r.status !== 'Ignored');
-  setRequests(all);
+  e.target.classList.add('active');
   render();
 });
 
-/* ---------- Logout ---------- */
-document.getElementById('logoutBtn').addEventListener('click', ()=>{ localStorage.removeItem('adminAuth'); location.href='login.html'; });
-document.getElementById('logoutLink').addEventListener('click', ()=>{ localStorage.removeItem('adminAuth'); });
+/* -------------------------------
+   Search + filters
+--------------------------------*/
+document.getElementById('searchInput').oninput=render;
+document.getElementById('filterStatus').onchange=render;
+document.getElementById('staffFilter').onchange=render;
 
-/* ---------- Add Staff modal ---------- */
+/* -------------------------------
+   Sidebar Actions
+--------------------------------*/
+document.querySelectorAll('.sb-item').forEach(item=>{
+  item.onclick=()=>{
+    document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+    item.classList.add('active');
+
+    const action = item.dataset.action;
+    if(action==='dashboard') {
+      document.querySelector('.tab[data-cat="all"]').click();
+    }
+    else if(action==='assignments') {
+      document.querySelector('.tab[data-cat="all"]').click();
+    }
+    else if(action==='add-staff') {
+      openAddStaff();
+    }
+    else if(action==='add-food') {
+      openAddFood();
+    }
+    else if(action==='generate-qr') {
+      openGenerateQR();
+    }
+    else if(action==='settings') {
+      openSettings();
+    }
+  };
+});
+
+/* -------------------------------
+   Add Staff Modal
+--------------------------------*/
 function openAddStaff(){
   openModal(`
     <h3>Add New Staff</h3>
-    <div class="form-row">
-      <label class="small-muted">Staff name</label>
-      <input id="newStaffName" placeholder="e.g. Raj" />
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+    <div class="form-row"><input id="newStaffName" placeholder="Name" /></div>
+    <div style="text-align:right">
       <button onclick="closeModal()" class="btn">Cancel</button>
-      <button class="btn assign" onclick="addStaff()">Add Staff</button>
+      <button onclick="addStaff()" class="btn assign">Add</button>
     </div>
   `);
 }
 function addStaff(){
   const name = document.getElementById('newStaffName').value.trim();
-  if(!name){ alert('Enter staff name'); return; }
+  if(!name) return alert('Enter staff');
   const staff = getStaff();
-  if(staff.includes(name)){ alert('Staff already exists'); return; }
-  staff.push(name); setStaff(staff);
-  populateStaffFilter(); render();
+  if(staff.includes(name)) return alert('Staff exists');
+  staff.push(name);
+  setStaff(staff);
+  populateStaffFilter();
   closeModal();
-  alert('Staff added: ' + name);
+  alert('Staff added');
 }
 
-/* ---------- Add Food modal ---------- */
+/* -------------------------------
+   Add Food Modal
+--------------------------------*/
 function openAddFood(){
   const categories = Object.keys(getFood());
   openModal(`
-    <h3>Add Food Menu Item</h3>
+    <h3>Add Food Item</h3>
     <div class="form-row">
-      <label class="small-muted">Category (existing or new)</label>
-      <input id="foodCategory" placeholder="Breakfast / Lunch / Dinner" value="${categories[0]||''}" />
+      <input id="foodCategory" placeholder="Category" value="${categories[0]||''}" />
     </div>
-    <div class="form-row">
-      <label class="small-muted">Item name</label>
-      <input id="foodName" placeholder="e.g. Dosa" />
-    </div>
-    <div class="form-row">
-      <label class="small-muted">Price (INR)</label>
-      <input id="foodPrice" type="number" placeholder="100" />
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+    <div class="form-row"><input id="foodName" placeholder="Item name" /></div>
+    <div class="form-row"><input id="foodPrice" type="number" placeholder="Price" /></div>
+
+    <div style="text-align:right">
       <button onclick="closeModal()" class="btn">Cancel</button>
-      <button class="btn assign" onclick="addFoodItem()">Add Item</button>
+      <button onclick="addFoodItem()" class="btn assign">Add</button>
     </div>
   `);
 }
 function addFoodItem(){
   const cat = document.getElementById('foodCategory').value.trim();
-  const name = document.getElementById('foodName').value.trim();
-  const price = document.getElementById('foodPrice').value.trim();
-  if(!cat || !name || !price){ alert('Fill category, name and price'); return; }
-  const menu = getFood();
-  if(!menu[cat]) menu[cat] = [];
+  const name= document.getElementById('foodName').value.trim();
+  const price=document.getElementById('foodPrice').value.trim();
+  if(!cat || !name || !price) return alert('Fill details');
+
+  const menu=getFood();
+  if(!menu[cat]) menu[cat]=[];
   menu[cat].push({name, price});
   setFood(menu);
+
   closeModal();
-  alert(`Added ${name} (${cat})`);
+  alert('Food item added');
 }
 
-/* ---------- Settings ---------- */
+/* -------------------------------
+   Settings Modal
+--------------------------------*/
 function openSettings(){
-  const pin = localStorage.getItem('adminPin') || '';
+  const pin = localStorage.getItem('adminPin')||'4321';
   openModal(`
     <h3>Settings</h3>
-    <div class="form-row"><label class="small-muted">Admin PIN</label><input id="setPin" placeholder="4-6 digits" value="${pin}" /></div>
-    <div class="form-row"><label class="small-muted">Staff list (comma separated)</label><input id="setStaff" placeholder="Raj,Kumar,Sita" value="${getStaff().join(',')}" /></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+    <div class="form-row"><input id="setPin" placeholder="4-6 digit PIN" value="${pin}" /></div>
+    <div class="form-row"><input id="setStaff" placeholder="comma separated staff" value="${getStaff().join(',')}" /></div>
+
+    <div style="text-align:right">
       <button onclick="closeModal()" class="btn">Cancel</button>
-      <button class="btn assign" onclick="saveSettings()">Save</button>
+      <button onclick="saveSettings()" class="btn assign">Save</button>
     </div>
   `);
 }
 function saveSettings(){
-  const newPin = document.getElementById('setPin').value.trim();
+  const pin = document.getElementById('setPin').value.trim();
   const staffCSV = document.getElementById('setStaff').value.trim();
-  if(newPin && !/^\d{4,6}$/.test(newPin)){ alert('PIN must be 4-6 digits'); return; }
-  if(newPin) localStorage.setItem('adminPin', newPin);
-  if(staffCSV){
-    const arr = staffCSV.split(',').map(s=>s.trim()).filter(Boolean);
-    setStaff(arr);
-  }
+
+  if(pin && !/^\d{4,6}$/.test(pin)) return alert('Invalid PIN');
+  if(pin) localStorage.setItem('adminPin', pin);
+
+  const list = staffCSV.split(',').map(s=>s.trim()).filter(Boolean);
+  setStaff(list);
   populateStaffFilter();
-  alert('Settings saved');
+
   closeModal();
+  alert('Settings saved');
 }
 
-/* ---------- Init ---------- */
+/* -------------------------------
+   QR Code Generator
+--------------------------------*/
+function openGenerateQR(){
+  openModal(`
+    <h3>Generate Room QR Code</h3>
+
+    <div class="form-row">
+      <label class="small-muted">Room Number</label>
+      <input id="qrRoomInput" type="number" placeholder="e.g. 203" />
+    </div>
+
+    <div id="qrPreview" style="text-align:center;margin-top:10px;"></div>
+
+    <div style="text-align:right;margin-top:12px">
+      <button onclick="closeModal()" class="btn">Close</button>
+      <button onclick="generateQR()" class="btn assign">Generate</button>
+    </div>
+  `);
+}
+
+function generateQR(){
+  const room = document.getElementById('qrRoomInput').value.trim();
+  if(!room) return alert('Enter room');
+
+  const baseURL = "https://infovarunapower-dev.github.io/hotel_portal/";
+  const roomLink = `${baseURL}?room=${room}`;
+
+  const cont = document.getElementById('qrPreview');
+  cont.innerHTML = `
+    <p><strong>Room Link:</strong><br>${roomLink}</p>
+    <canvas id="qrCanvas"></canvas><br>
+    <button class="btn assign" onclick="downloadQR()">Download QR</button>
+  `;
+
+  const canvas = document.getElementById('qrCanvas');
+  const qr = new QRious({
+    element: canvas,
+    value: roomLink,
+    size: 200
+  });
+
+  window.generatedQR = qr;
+}
+
+function downloadQR(){
+  const a = document.createElement('a');
+  a.href = window.generatedQR.toDataURL();
+  a.download = "Room_QR.png";
+  a.click();
+}
+
+/* -------------------------------
+   Logout
+--------------------------------*/
+document.getElementById('logoutBtn').onclick = ()=>{
+  localStorage.removeItem('adminAuth');
+  location.href='login.html';
+};
+document.getElementById('logoutLink').onclick = ()=>{
+  localStorage.removeItem('adminAuth');
+};
+
+/* -------------------------------
+   Init
+--------------------------------*/
 populateStaffFilter();
 render();
 </script>
