@@ -1,200 +1,104 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hotel Management Portal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-  <body
-    class="bg-gradient-to-br from-blue-100 via-white to-blue-200 min-h-screen flex flex-col items-center p-6"
-  >
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Login - Hotel Portal (PIN)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+    body{font-family:Arial;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f3f6fb}
+    .box{background:#fff;padding:22px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.08);width:360px}
+    input,select,button{width:100%;padding:10px;margin:8px 0;border-radius:6px;border:1px solid #ddd;box-sizing:border-box}
+    button{background:#2563eb;color:#fff;border:none;cursor:pointer}
+    .muted{font-size:13px;color:#666;margin-top:6px}
+    .small{font-size:13px;color:#444}
+    .link{color:#2563eb;cursor:pointer;text-decoration:underline}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2 style="margin:0 0 6px">Sign In</h2>
+    <p class="muted">Choose role and sign in. Admin uses PIN.</p>
 
-    <!-- HOME BUTTON -->
-    <a href="index.html"
-      class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hover:bg-gray-100 transition">
-      🏠 Home
-    </a>
+    <label class="small">Role</label>
+    <select id="role">
+      <option value="admin">Admin</option>
+      <option value="staff">Staff</option>
+    </select>
 
-    <h1 class="text-4xl font-bold mb-10 text-gray-800">
-      🏨 Hotel Management Portal
-    </h1>
-
-    <!-- MAIN MENU -->
-    <div
-      id="mainMenu"
-      class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl"
-    >
-      <button
-        onclick="showSection('housekeeping')"
-        class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center"
-      >
-        🧹
-        <h2 class="text-xl font-semibold mt-2">Housekeeping</h2>
-      </button>
-      <button
-        onclick="showSection('travel')"
-        class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center"
-      >
-        🚗
-        <h2 class="text-xl font-semibold mt-2">Travel</h2>
-      </button>
-      <button
-        onclick="showSection('food')"
-        class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center"
-      >
-        🍽️
-        <h2 class="text-xl font-semibold mt-2">Food Menu</h2>
-      </button>
+    <div id="adminBlock">
+      <label class="small">Enter Admin PIN</label>
+      <input id="adminPin" type="password" placeholder="Enter 4-digit PIN"/>
+      <div style="display:flex;gap:8px">
+        <button id="adminLoginBtn" style="flex:1">Sign in (Admin)</button>
+        <button id="setPinBtn" style="flex:1;background:#10b981">Set PIN</button>
+      </div>
+      <p class="muted">Default PIN (first time): <strong>4321</strong></p>
     </div>
 
-    <!-- CATEGORY SECTION -->
-    <div
-      id="categorySection"
-      class="hidden w-full max-w-2xl bg-white p-8 mt-10 rounded-2xl shadow-xl"
-    >
-      <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
-
-      <!-- Sub-options will appear here -->
-      <div
-        id="optionsList"
-        class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
-      ></div>
-
-      <!-- Request Form -->
-      <form id="requestForm" class="space-y-4">
-        <input
-          id="guestName"
-          type="text"
-          placeholder="Your Name"
-          class="border w-full p-3 rounded-md"
-          required
-        />
-        <input
-          id="roomNumber"
-          type="number"
-          placeholder="Room Number"
-          class="border w-full p-3 rounded-md"
-          required
-        />
-        <textarea
-          id="requestDetails"
-          placeholder="Additional details..."
-          class="border w-full p-3 rounded-md"
-        ></textarea>
-
-        <button
-          type="submit"
-          class="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 w-full"
-        >
-          Submit Request
-        </button>
-        <button
-          type="button"
-          onclick="goBack()"
-          class="text-gray-500 underline w-full mt-2"
-        >
-          ⬅️ Back
-        </button>
-      </form>
+    <div id="staffBlock" style="display:none">
+      <label class="small">Staff</label>
+      <select id="staffUser"></select>
+      <button id="staffLoginBtn">Sign in (Staff)</button>
     </div>
 
-    <script>
-      let currentCategory = "";
-      let currentService = "";
+    <p class="muted" style="margin-top:8px">After login, admin goes to <code>admin.html</code>, staff to <code>staff.html</code>.</p>
+  </div>
 
-      const services = {
-        housekeeping: {
-          title: "🧹 Housekeeping Services",
-          options: [
-            "Room Cleaning",
-            "Laundry Service",
-            "Extra Towels",
-            "Room Supplies",
-            "Other Requests",
-          ],
-        },
-        travel: {
-          title: "🚗 Travel Assistance",
-          options: [
-            "Airport Pickup",
-            "Local Cab",
-            "Tour Guide",
-            "Car Rental",
-            "Other Travel Help",
-          ],
-        },
-        food: {
-          title: "🍽️ Food Menu",
-          options: [
-            "Breakfast Order",
-            "Lunch Order",
-            "Dinner Order",
-            "Snacks",
-            "Beverages",
-          ],
-        },
-      };
+<script>
+  // Ensure staff list
+  if(!localStorage.getItem('staffList')) localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
 
-      function showSection(category) {
-        currentCategory = category;
-        currentService = "";
-        const section = services[category];
-        document.getElementById("mainMenu").classList.add("hidden");
-        document.getElementById("categorySection").classList.remove("hidden");
-        document.getElementById("categoryTitle").innerText = section.title;
+  // Ensure adminPin exists (default 4321)
+  if(!localStorage.getItem('adminPin')) localStorage.setItem('adminPin', '4321');
 
-        const list = document.getElementById("optionsList");
-        list.innerHTML = "";
-        section.options.forEach((opt) => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className =
-            "bg-gray-100 hover:bg-blue-100 font-semibold py-3 rounded-lg shadow-sm";
-          btn.innerText = opt;
-          btn.onclick = () => {
-            currentService = opt;
-            document
-              .querySelectorAll("#optionsList button")
-              .forEach((b) => b.classList.remove("bg-blue-200"));
-            btn.classList.add("bg-blue-200");
-          };
-          list.appendChild(btn);
-        });
-      }
+  const roleEl = document.getElementById('role');
+  const adminBlock = document.getElementById('adminBlock');
+  const staffBlock = document.getElementById('staffBlock');
+  const staffSelect = document.getElementById('staffUser');
 
-      function goBack() {
-        document.getElementById("mainMenu").classList.remove("hidden");
-        document.getElementById("categorySection").classList.add("hidden");
-      }
+  function refreshStaffSelect(){
+    const staff = JSON.parse(localStorage.getItem('staffList')||'[]');
+    staffSelect.innerHTML = staff.map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+  refreshStaffSelect();
 
-      document
-        .getElementById("requestForm")
-        .addEventListener("submit", (e) => {
-          e.preventDefault();
-          const name = guestName.value.trim();
-          const room = roomNumber.value.trim();
-          const details = requestDetails.value.trim();
+  roleEl.addEventListener('change', () => {
+    if(roleEl.value === 'admin'){
+      adminBlock.style.display = 'block';
+      staffBlock.style.display = 'none';
+    } else {
+      adminBlock.style.display = 'none';
+      staffBlock.style.display = 'block';
+    }
+  });
 
-          const request = {
-            category: currentCategory,
-            service: currentService || "General Request",
-            name,
-            room,
-            details,
-            time: new Date().toLocaleString(),
-          };
+  document.getElementById('adminLoginBtn').addEventListener('click', () => {
+    const entered = document.getElementById('adminPin').value.trim();
+    const stored = localStorage.getItem('adminPin') || '4321';
+    if(entered === stored){
+      localStorage.setItem('adminAuth', 'true'); // admin authenticated flag
+      alert('Admin authenticated');
+      location.href = 'admin.html';
+    } else {
+      alert('Invalid PIN');
+    }
+  });
 
-          const allRequests = JSON.parse(
-            localStorage.getItem("requests") || "[]"
-          );
-          allRequests.push(request);
-          localStorage.setItem("requests", JSON.stringify(allRequests));
+  // Allow admin to set a new PIN (will override)
+  document.getElementById('setPinBtn').addEventListener('click', () => {
+    const newPin = prompt('Enter NEW PIN (4 digits):','');
+    if(!newPin) return;
+    if(!/^\d{4,6}$/.test(newPin)){ alert('PIN should be 4-6 digits'); return; }
+    localStorage.setItem('adminPin', newPin);
+    alert('Admin PIN updated');
+  });
 
-          alert("✅ Request submitted successfully!");
-          e.target.reset();
-          goBack();
-        });
-    </script>
-  </body>
+  document.getElementById('staffLoginBtn').addEventListener('click', () => {
+    const staff = staffSelect.value;
+    if(!staff){ alert('Choose staff'); return; }
+    localStorage.setItem('staffAuth', JSON.stringify({name: staff}));
+    location.href = 'staff.html';
+  });
+</script>
+</body>
 </html>
