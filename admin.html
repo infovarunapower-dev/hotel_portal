@@ -1,156 +1,377 @@
+
 <!doctype html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>Admin Dashboard (LocalStorage Version)</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
-<script src="https://cdn.tailwindcss.com"></script>
-
-<style>
-.badge {
-  padding: 4px 8px;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-}
-.Pending { background:#6b7280; }
-.Assigned { background:#2563eb; }
-.InProgress { background:#f59e0b; }
-.Completed { background:#16a34a; }
-.Ignored { background:#9ca3af; }
-</style>
+  <meta charset="utf-8"/>
+  <title>Admin Dashboard - Hotel Portal</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+    :root{
+      --blue:#2563eb;
+      --muted:#6b7280;
+      --bg:#f3f6fb;
+      --sidebar:#ffffff;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Arial;margin:0;background:var(--bg);color:#111}
+    header{background:var(--blue);color:#fff;padding:14px 20px;display:flex;align-items:center}
+    header .title{font-size:18px;font-weight:700}
+    .layout{display:flex;min-height:calc(100vh - 56px)}
+    .sidebar{
+      width:260px;background:var(--sidebar);padding:18px;
+      box-shadow: 6px 0 20px rgba(0,0,0,0.06);
+      border-right:1px solid #eef2f7;
+    }
+    .sidebar h3{margin:0 0 8px;font-size:16px}
+    .sb-item{padding:10px 12px;border-radius:8px;margin-bottom:8px;cursor:pointer;color:#1f2937}
+    .sb-item:hover{background:#eef2ff}
+    .sb-item.active{background:var(--blue);color:#fff}
+    .sb-section{font-size:13px;color:var(--muted);margin-top:14px;margin-bottom:8px}
+    .wrap{flex:1;padding:20px}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+    .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+    .tab{padding:10px 14px;border-radius:8px;background:#e6eefc;color:var(--blue);cursor:pointer}
+    .tab.active{background:var(--blue);color:#fff}
+    input[type=text], input[type=number], select, textarea{padding:8px;border-radius:6px;border:1px solid #ddd}
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.04)}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;vertical-align:middle}
+    th{background:#fafbfd;color:var(--muted);font-weight:600}
+    .btn{padding:6px 10px;border-radius:6px;border:none;cursor:pointer;margin-left:6px}
+    .btn.assign{background:#10b981;color:#fff}
+    .btn.inprogress{background:#f59e0b;color:#fff}
+    .btn.complete{background:#16a34a;color:#fff}
+    .btn.ignore{background:#9ca3af;color:#fff}
+    .small{font-size:13px;color:var(--muted)}
+    .status-tag{padding:6px 8px;border-radius:6px;font-weight:600;color:#fff;display:inline-block}
+    .status-Pending{background:#6b7280}
+    .status-Assigned{background:#2563eb}
+    .status-In\ Progress{background:#f59e0b}
+    .status-Completed{background:#16a34a}
+    .status-Ignored{background:#9ca3af}
+    .select-staff{padding:6px;border-radius:6px}
+    .topbar{display:flex;align-items:center;gap:12px;width:100%}
+    a.link{color:#fff;text-decoration:underline;margin-left:12px}
+    .right{margin-left:auto}
+    .modal-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,0.4);
+      display:none;align-items:center;justify-content:center;z-index:2000
+    }
+    .modal{
+      background:#fff;padding:18px;border-radius:10px;
+      max-width:520px;width:100%;box-shadow:0 12px 30px rgba(0,0,0,0.12)
+    }
+    .modal h3{margin-top:0}
+    .form-row{margin-bottom:10px}
+    .small-muted{font-size:13px;color:#555}
+  </style>
 </head>
 
-<body class="bg-gray-100 p-5">
+<body>
+  <header>
+    <div class="topbar">
+      <div class="title">Admin Dashboard</div>
+      <div class="right small">
+        Signed in as: <strong>Admin</strong>
+        <a class="link" href="index.html">Home</a>
+        <a class="link" href="login.html" id="logoutLink">Logout</a>
+      </div>
+    </div>
+  </header>
 
-<h1 class="text-2xl font-bold mb-4">Admin Dashboard (LocalStorage)</h1>
+  <div class="layout">
 
-<!-- Create Request -->
-<div class="mb-4 p-4 bg-white shadow rounded">
-  <h3 class="font-semibold mb-2">Create Request</h3>
-  <div class="grid grid-cols-2 gap-3">
-    <input id="type" placeholder="Category (housekeeping/travel/food)" class="border p-2">
-    <input id="service" placeholder="Service Name" class="border p-2">
-    <input id="guest" placeholder="Guest Name" class="border p-2">
-    <input id="room" placeholder="Room Number" class="border p-2">
-    <textarea id="details" placeholder="Details" class="border p-2 col-span-2"></textarea>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h3>ADMIN MENU</h3>
+      <div class="sb-item active" data-action="dashboard">📋 Dashboard</div>
+      <div class="sb-item" data-action="assignments">🧾 Assignments</div>
+      <div class="sb-item" data-action="add-staff">➕ Add Staff</div>
+      <div class="sb-item" data-action="add-food">🍽 Add Food Menu</div>
+      <div class="sb-item" data-action="settings">⚙ Settings</div>
+
+      <div style="height:1px;background:#eef2f7;margin:12px 0"></div>
+      <div class="sb-item" id="logoutBtn">🔒 Logout</div>
+
+      <div class="sb-section">Quick stats</div>
+      <div class="small" id="statsArea">Requests: 0 · Assigned: 0 · Ignored: 0</div>
+    </aside>
+
+    <main class="wrap">
+
+      <div class="controls">
+        <div class="tabs" id="tabs">
+          <div class="tab active" data-cat="all">All</div>
+          <div class="tab" data-cat="Housekeeping">🧹 Housekeeping</div>
+          <div class="tab" data-cat="Travel">🚗 Travel</div>
+          <div class="tab" data-cat="Food">🍽️ Food</div>
+        </div>
+
+        <input type="text" id="searchInput" placeholder="Search..." style="flex:1"/>
+
+        <select id="filterStatus">
+          <option value="">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Assigned">Assigned</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+          <option value="Ignored">Ignored</option>
+        </select>
+
+        <select id="staffFilter">
+          <option value="">All Staff</option>
+        </select>
+
+        <button class="btn ignore" id="clearIgnoredBtn">Clear Ignored</button>
+      </div>
+
+      <table id="reqTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Category</th><th>Service</th><th>Guest</th>
+            <th>Room</th><th>Time</th><th>Status</th><th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+    </main>
   </div>
-  <button onclick="createRequest()" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded">
-    Add Request
-  </button>
-</div>
 
-<!-- Requests List -->
-<div id="reqList"></div>
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" id="modalContent"></div>
+  </div>
 
 <script>
-/* -------------------------------
-   LOCAL STORAGE HELPERS
--------------------------------- */
-function load() {
-  return JSON.parse(localStorage.getItem("requests") || "[]");
+/* STORAGE HELPERS */
+function getRequests(){ return JSON.parse(localStorage.getItem('requests') || '[]'); }
+function setRequests(a){ localStorage.setItem('requests', JSON.stringify(a)); }
+
+function getStaff(){
+  if(!localStorage.getItem('staffList'))
+      localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
+  return JSON.parse(localStorage.getItem('staffList'));
+}
+function setStaff(a){ localStorage.setItem('staffList', JSON.stringify(a)); }
+
+function getFood(){ return JSON.parse(localStorage.getItem('foodMenu') || '{}'); }
+function setFood(obj){ localStorage.setItem('foodMenu', JSON.stringify(obj)); }
+
+/* MODAL */
+const modalBackdrop=document.getElementById("modalBackdrop");
+const modalContent=document.getElementById("modalContent");
+
+function openModal(html){
+  modalContent.innerHTML=html;
+  modalBackdrop.style.display="flex";
+}
+function closeModal(){
+  modalBackdrop.style.display="none";
+  modalContent.innerHTML="";
+}
+modalBackdrop.addEventListener("click",e=>{
+  if(e.target===modalBackdrop) closeModal();
+});
+
+/* TABLE */
+function statusTag(s){
+  return `<span class="status-tag status-${s.replace(/ /g,'-')}">${s}</span>`;
 }
 
-function save(data) {
-  localStorage.setItem("requests", JSON.stringify(data));
+function updateStats(){
+  let all=getRequests();
+  let total=all.length;
+  let assigned=all.filter(r=>r.status==="Assigned").length;
+  let ignored=all.filter(r=>r.status==="Ignored").length;
+  document.getElementById("statsArea").innerText=
+    `Requests: ${total} · Assigned: ${assigned} · Ignored: ${ignored}`;
 }
 
-/* -------------------------------
-   CREATE REQUEST
--------------------------------- */
-function createRequest() {
-  let all = load();
+function render(){
+  let all=getRequests();
+  let body=document.querySelector("#reqTable tbody");
+  body.innerHTML="";
 
-  const req = {
-    id: Date.now().toString(),   // UNIQUE ID
-    type: type.value.trim(),
-    service: service.value.trim(),
-    name: guest.value.trim(),
-    room: room.value.trim(),
-    details: details.value.trim(),
-    status: "Pending",
-    assigned_to: "",
-    created_at: new Date().toLocaleString(),
-    updated_at: ""
-  };
+  let tab=document.querySelector(".tab.active").dataset.cat;
+  let search=document.getElementById("searchInput").value.toLowerCase();
+  let statusFilter=document.getElementById("filterStatus").value;
+  let staffFilter=document.getElementById("staffFilter").value;
 
-  all.push(req);
-  save(all);
-  render();
-}
-
-/* -------------------------------
-   UPDATE STATUS (ASSIGN, START, COMPLETE)
--------------------------------- */
-function updateStatus(id, status, staff = "") {
-  let all = load();
-  let idx = all.findIndex(r => r.id === id);
-
-  if (idx > -1) {
-    all[idx].status = status;
-    if (staff) all[idx].assigned_to = staff;
-    all[idx].updated_at = new Date().toLocaleString();
-    
-    save(all);
-    render();
-  }
-}
-
-/* -------------------------------
-   ASSIGN STAFF
--------------------------------- */
-function assign(id) {
-  const staff = document.getElementById("staff_" + id).value;
-  if (!staff) {
-    alert("Select staff");
-    return;
-  }
-  updateStatus(id, "Assigned", staff);
-}
-
-/* -------------------------------
-   RENDER REQUESTS
--------------------------------- */
-function render() {
-  let all = load();
-  let html = "";
-
-  all.forEach(r => {
-    html += `
-      <div class="bg-white p-4 shadow rounded mb-3">
-        <div class="flex justify-between">
-          <div>
-            <div class="font-semibold">${r.service}</div>
-            <div class="text-sm text-gray-600">${r.type} - Room ${r.room}</div>
-            <div class="text-xs text-gray-500">${r.created_at}</div>
-          </div>
-          <div class="badge ${r.status.replace(" ", "")}">${r.status}</div>
-        </div>
-
-        <div class="mt-3 flex gap-2">
-          <select id="staff_${r.id}" class="border p-1">
-            <option value="">Assign staff</option>
-            <option value="Raj">Raj</option>
-            <option value="Kumar">Kumar</option>
-            <option value="Sita">Sita</option>
-          </select>
-
-          <button class="px-3 py-1 bg-blue-600 text-white rounded" onclick="assign('${r.id}')">Assign</button>
-          <button class="px-3 py-1 bg-amber-500 text-white rounded" onclick="updateStatus('${r.id}','In Progress')">Start</button>
-          <button class="px-3 py-1 bg-green-600 text-white rounded" onclick="updateStatus('${r.id}','Completed')">Complete</button>
-          <button class="px-3 py-1 bg-gray-600 text-white rounded" onclick="updateStatus('${r.id}','Ignored')">Ignore</button>
-        </div>
-      </div>
-    `;
+  let filtered=all.filter(r=>{
+    if(tab!=="all" && r.type!==tab) return false;
+    if(statusFilter && r.status!==statusFilter) return false;
+    if(staffFilter && (r.assigned_to||"")!==staffFilter) return false;
+    if(search && !(
+      (r.name||"").toLowerCase().includes(search) ||
+      (r.room||"").toString().includes(search) ||
+      (r.service||"").toLowerCase().includes(search)
+    )) return false;
+    return true;
   });
 
-  document.getElementById("reqList").innerHTML = html;
+  filtered.slice().reverse().forEach((r,i)=>{
+    let idx=all.length-1-i;
+    let tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${idx+1}</td>
+      <td>${r.type}</td>
+      <td>${r.service}</td>
+      <td>${r.name||'-'}</td>
+      <td>${r.room||'-'}</td>
+      <td>${r.time||''}</td>
+      <td>${statusTag(r.status)}</td>
+      <td>
+        <select class="select-staff" data-idx="${idx}">
+          <option value="">Assign staff</option>
+          ${getStaff().map(s=>`<option value="${s}" ${r.assigned_to===s?'selected':''}>${s}</option>`)}
+        </select>
+
+        <button class="btn assign" data-assign="${idx}">Assign</button>
+        <button class="btn inprogress" data-inprogress="${idx}">Start</button>
+        <button class="btn complete" data-complete="${idx}">Complete</button>
+        <button class="btn ignore" data-ignore="${idx}">Ignore</button>
+      </td>`;
+    body.appendChild(tr);
+  });
+
+  updateStats();
 }
 
-render();
-</script>
+/* ACTIONS */
+document.addEventListener("click",e=>{
+  let el=e.target;
 
+  if(el.dataset.assign){
+    let idx=+el.dataset.assign;
+    let staff=document.querySelector(`.select-staff[data-idx="${idx}"]`).value;
+    if(!staff)return alert("Select staff");
+    let all=getRequests();
+    all[idx].status="Assigned";
+    all[idx].assigned_to=staff;
+    setRequests(all);render();
+  }
+  if(el.dataset.inprogress){
+    let idx=+el.dataset.inprogress;
+    let all=getRequests();
+    all[idx].status="In Progress";
+    setRequests(all);render();
+  }
+  if(el.dataset.complete){
+    let idx=+el.dataset.complete;
+    let all=getRequests();
+    all[idx].status="Completed";
+    setRequests(all);render();
+  }
+  if(el.dataset.ignore){
+    let idx=+el.dataset.ignore;
+    if(!confirm("Ignore this?"))return;
+    let all=getRequests();
+    all[idx].status="Ignored";
+    setRequests(all);render();
+  }
+});
+
+/* Filters */
+document.getElementById("tabs").onclick=e=>{
+  if(e.target.classList.contains("tab")){
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    e.target.classList.add("active");
+    render();
+  }
+};
+document.getElementById("searchInput").oninput=render;
+document.getElementById("filterStatus").onchange=render;
+document.getElementById("staffFilter").onchange=render;
+
+/* Sidebar */
+document.querySelectorAll(".sb-item").forEach(item=>{
+  item.onclick=()=>{
+    document.querySelectorAll(".sb-item").forEach(i=>i.classList.remove("active"));
+    item.classList.add("active");
+
+    let a=item.dataset.action;
+    if(a==="dashboard"){document.querySelector('.tab[data-cat="all"]').click();}
+    else if(a==="assignments"){document.querySelector('.tab[data-cat="all"]').click();}
+    else if(a==="add-staff"){openAddStaff();}
+    else if(a==="add-food"){openAddFood();}
+    else if(a==="settings"){openSettings();}
+  };
+});
+
+/* Add Staff */
+function openAddStaff(){
+  openModal(`
+    <h3>Add New Staff</h3>
+    <input id="newStaffName" placeholder="Name" class="form-row"/>
+    <button onclick="closeModal()" class="btn">Cancel</button>
+    <button onclick="addStaff()" class="btn assign">Add</button>
+  `);
+}
+function addStaff(){
+  let n=document.getElementById("newStaffName").value.trim();
+  if(!n)return alert("Enter name");
+  let staff=getStaff();
+  if(staff.includes(n))return alert("Staff exists");
+  staff.push(n);
+  setStaff(staff);
+  populateStaffFilter();
+  closeModal();
+}
+
+/* Add Food */
+function openAddFood(){
+  let cats=Object.keys(getFood());
+  openModal(`
+    <h3>Add Food Item</h3>
+    <input id="foodCategory" placeholder="Category" value="${cats[0]||''}" class="form-row"/>
+    <input id="foodName" placeholder="Item" class="form-row"/>
+    <input id="foodPrice" type="number" placeholder="Price" class="form-row"/>
+    <button onclick="closeModal()" class="btn">Cancel</button>
+    <button onclick="addFoodItem()" class="btn assign">Add</button>
+  `);
+}
+function addFoodItem(){
+  let cat=document.getElementById("foodCategory").value.trim();
+  let n=document.getElementById("foodName").value.trim();
+  let p=document.getElementById("foodPrice").value.trim();
+  if(!cat||!n||!p)return alert("Fill details");
+  let menu=getFood();
+  if(!menu[cat])menu[cat]=[];
+  menu[cat].push({name:n,price:p});
+  setFood(menu);
+  closeModal();
+}
+
+/* Settings */
+function openSettings(){
+  openModal(`
+    <h3>Settings</h3>
+    <input id="setPin" placeholder="PIN (4 digits)" class="form-row"/>
+    <input id="setStaff" value="${getStaff().join(',')}" class="form-row"/>
+    <button onclick="closeModal()" class="btn">Cancel</button>
+    <button onclick="saveSettings()" class="btn assign">Save</button>
+  `);
+}
+function saveSettings(){
+  let s=document.getElementById("setStaff").value.trim();
+  setStaff(s.split(',').map(x=>x.trim()));
+  populateStaffFilter();
+  closeModal();
+}
+
+/* Logout */
+document.getElementById("logoutBtn").onclick=()=>{localStorage.removeItem("adminAuth");location.href="login.html"};
+document.getElementById("logoutLink").onclick=()=>localStorage.removeItem("adminAuth");
+
+/* Init */
+function populateStaffFilter(){
+  let s=getStaff();
+  let el=document.getElementById("staffFilter");
+  el.innerHTML='<option value="">All Staff</option>'+s.map(x=>`<option>${x}</option>`).join('');
+}
+
+populateStaffFilter();
+render();
+
+</script>
 </body>
 </html>
