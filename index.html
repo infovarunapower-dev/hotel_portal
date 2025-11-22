@@ -6,6 +6,7 @@
     <title>Hotel Management Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
+
   <body
     class="bg-gradient-to-br from-blue-100 via-white to-blue-200 min-h-screen flex flex-col items-center p-6"
   >
@@ -32,6 +33,7 @@
         🧹
         <h2 class="text-xl font-semibold mt-2">Housekeeping</h2>
       </button>
+
       <button
         onclick="showSection('travel')"
         class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center"
@@ -39,6 +41,7 @@
         🚗
         <h2 class="text-xl font-semibold mt-2">Travel</h2>
       </button>
+
       <button
         onclick="showSection('food')"
         class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center"
@@ -55,10 +58,10 @@
     >
       <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
 
-      <!-- Sub-options will appear here -->
+      <!-- Sub-options / dynamic food menu -->
       <div
         id="optionsList"
-        class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+        class="flex flex-col gap-4 mb-6"
       ></div>
 
       <!-- Request Form -->
@@ -70,6 +73,7 @@
           class="border w-full p-3 rounded-md"
           required
         />
+
         <input
           id="roomNumber"
           type="number"
@@ -77,6 +81,7 @@
           class="border w-full p-3 rounded-md"
           required
         />
+
         <textarea
           id="requestDetails"
           placeholder="Additional details..."
@@ -89,6 +94,7 @@
         >
           Submit Request
         </button>
+
         <button
           type="button"
           onclick="goBack()"
@@ -114,6 +120,7 @@
             "Other Requests",
           ],
         },
+
         travel: {
           title: "🚗 Travel Assistance",
           options: [
@@ -124,15 +131,11 @@
             "Other Travel Help",
           ],
         },
+
+        // Dynamic Food Menu Category
         food: {
           title: "🍽️ Food Menu",
-          options: [
-            "Breakfast Order",
-            "Lunch Order",
-            "Dinner Order",
-            "Snacks",
-            "Beverages",
-          ],
+          dynamic: true,
         },
       };
 
@@ -140,18 +143,58 @@
         currentCategory = category;
         currentService = "";
         const section = services[category];
+
         document.getElementById("mainMenu").classList.add("hidden");
         document.getElementById("categorySection").classList.remove("hidden");
         document.getElementById("categoryTitle").innerText = section.title;
 
         const list = document.getElementById("optionsList");
         list.innerHTML = "";
+
+        // DYNAMIC FOOD MENU
+        if (section.dynamic) {
+          const menuData = JSON.parse(localStorage.getItem("foodMenu") || "{}");
+
+          Object.keys(menuData).forEach((categoryName) => {
+            const catHeader = document.createElement("h3");
+            catHeader.className = "text-lg font-bold text-gray-700 mt-6";
+            catHeader.innerText = categoryName;
+            list.appendChild(catHeader);
+
+            menuData[categoryName].forEach((item) => {
+              const div = document.createElement("button");
+              div.type = "button";
+              div.className =
+                "bg-gray-100 hover:bg-blue-100 text-left font-semibold p-4 rounded-lg shadow-sm w-full";
+              div.innerText = `${item.name} — ₹${item.price}`;
+
+              div.onclick = () => {
+                currentService = `${item.name} (₹${item.price})`;
+
+                // highlight selected
+                document
+                  .querySelectorAll("#optionsList button")
+                  .forEach((b) =>
+                    b.classList.remove("bg-blue-200", "font-bold")
+                  );
+                div.classList.add("bg-blue-200", "font-bold");
+              };
+
+              list.appendChild(div);
+            });
+          });
+
+          return;
+        }
+
+        // NORMAL CATEGORIES (HOUSEKEEPING / TRAVEL)
         section.options.forEach((opt) => {
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className =
             "bg-gray-100 hover:bg-blue-100 font-semibold py-3 rounded-lg shadow-sm";
           btn.innerText = opt;
+
           btn.onclick = () => {
             currentService = opt;
             document
@@ -159,6 +202,7 @@
               .forEach((b) => b.classList.remove("bg-blue-200"));
             btn.classList.add("bg-blue-200");
           };
+
           list.appendChild(btn);
         });
       }
