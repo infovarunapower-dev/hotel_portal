@@ -16,11 +16,8 @@
     header{background:var(--blue);color:#fff;padding:14px 20px;display:flex;align-items:center}
     header .title{font-size:18px;font-weight:700}
     .layout{display:flex;min-height:calc(100vh - 56px)}
-    /* Sidebar - Style 3 (wide card) */
     .sidebar{
-      width:260px;
-      background:var(--sidebar);
-      padding:18px;
+      width:260px;background:var(--sidebar);padding:18px;
       box-shadow: 6px 0 20px rgba(0,0,0,0.06);
       border-right:1px solid #eef2f7;
     }
@@ -54,24 +51,25 @@
     .topbar{display:flex;align-items:center;gap:12px;width:100%}
     a.link{color:#fff;text-decoration:underline;margin-left:12px}
     .right{margin-left:auto}
-    /* modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:2000}
-    .modal{background:#fff;padding:18px;border-radius:10px;max-width:520px;width:100%;box-shadow:0 12px 30px rgba(0,0,0,0.12)}
+    .modal-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,0.4);
+      display:none;align-items:center;justify-content:center;z-index:2000
+    }
+    .modal{
+      background:#fff;padding:18px;border-radius:10px;
+      max-width:520px;width:100%;box-shadow:0 12px 30px rgba(0,0,0,0.12)
+    }
     .modal h3{margin-top:0}
     .form-row{margin-bottom:10px}
     .small-muted{font-size:13px;color:#555}
-    /* responsive */
-    @media(max-width:900px){
-      .layout{flex-direction:column}
-      .sidebar{width:100%;display:flex;overflow:auto;gap:8px}
-    }
   </style>
 </head>
+
 <body>
   <header>
-    <div class="topbar" style="width:100%;">
+    <div class="topbar">
       <div class="title">Admin Dashboard</div>
-      <div class="right small" style="display:flex;align-items:center;gap:12px">
+      <div class="right small">
         Signed in as: <strong>Admin</strong>
         <a class="link" href="index.html">Home</a>
         <a class="link" href="login.html" id="logoutLink">Logout</a>
@@ -81,18 +79,13 @@
 
   <div class="layout">
 
-    <!-- Sidebar (Style 3) -->
+    <!-- Sidebar -->
     <aside class="sidebar">
       <h3>ADMIN MENU</h3>
-
       <div class="sb-item active" data-action="dashboard">📋 Dashboard</div>
       <div class="sb-item" data-action="assignments">🧾 Assignments</div>
       <div class="sb-item" data-action="add-staff">➕ Add Staff</div>
       <div class="sb-item" data-action="add-food">🍽 Add Food Menu</div>
-
-      <!-- ⭐ NEW: Generate QR -->
-      <div class="sb-item" data-action="generate-qr">📱 Generate QR Code</div>
-
       <div class="sb-item" data-action="settings">⚙ Settings</div>
 
       <div style="height:1px;background:#eef2f7;margin:12px 0"></div>
@@ -102,11 +95,9 @@
       <div class="small" id="statsArea">Requests: 0 · Assigned: 0 · Ignored: 0</div>
     </aside>
 
-    <!-- Main content -->
     <main class="wrap">
 
-      <!-- Filters -->
-      <div class="controls" id="controlsTop">
+      <div class="controls">
         <div class="tabs" id="tabs">
           <div class="tab active" data-cat="all">All</div>
           <div class="tab" data-cat="Housekeeping">🧹 Housekeeping</div>
@@ -132,132 +123,94 @@
         <button class="btn ignore" id="clearIgnoredBtn">Clear Ignored</button>
       </div>
 
-      <!-- Table -->
       <table id="reqTable">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Category</th>
-            <th>Service</th>
-            <th>Guest</th>
-            <th>Room</th>
-            <th>Time</th>
-            <th>Status</th>
-            <th>Assign / Action</th>
+            <th>#</th><th>Category</th><th>Service</th><th>Guest</th>
+            <th>Room</th><th>Time</th><th>Status</th><th>Action</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
+
     </main>
   </div>
 
-  <!-- Modal (shared) -->
   <div class="modal-backdrop" id="modalBackdrop">
     <div class="modal" id="modalContent"></div>
   </div>
 
-  <!-- QR Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-
 <script>
-/* -------------------------------
-   Storage Helpers
---------------------------------*/
+/* STORAGE HELPERS */
 function getRequests(){ return JSON.parse(localStorage.getItem('requests') || '[]'); }
-function setRequests(arr){ localStorage.setItem('requests', JSON.stringify(arr)); }
+function setRequests(a){ localStorage.setItem('requests', JSON.stringify(a)); }
 
 function getStaff(){
   if(!localStorage.getItem('staffList'))
-    localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
-  return JSON.parse(localStorage.getItem('staffList') || '[]');
+      localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
+  return JSON.parse(localStorage.getItem('staffList'));
 }
-function setStaff(arr){ localStorage.setItem('staffList', JSON.stringify(arr)); }
+function setStaff(a){ localStorage.setItem('staffList', JSON.stringify(a)); }
 
-function getFood(){
-  if(!localStorage.getItem('foodMenu'))
-    localStorage.setItem('foodMenu', JSON.stringify({
-      "Breakfast":[{"name":"Idli","price":"60"}],
-      "Lunch":[{"name":"Thali","price":"150"}]
-    }));
-  return JSON.parse(localStorage.getItem('foodMenu') || '{}');
-}
+function getFood(){ return JSON.parse(localStorage.getItem('foodMenu') || '{}'); }
 function setFood(obj){ localStorage.setItem('foodMenu', JSON.stringify(obj)); }
 
-/* -------------------------------
-   Modal utilities
---------------------------------*/
-const modalBackdrop = document.getElementById('modalBackdrop');
-const modalContent  = document.getElementById('modalContent');
+/* MODAL */
+const modalBackdrop=document.getElementById("modalBackdrop");
+const modalContent=document.getElementById("modalContent");
 
 function openModal(html){
-  modalContent.innerHTML = html;
-  modalBackdrop.style.display = 'flex';
+  modalContent.innerHTML=html;
+  modalBackdrop.style.display="flex";
 }
 function closeModal(){
-  modalBackdrop.style.display = 'none';
-  modalContent.innerHTML = '';
+  modalBackdrop.style.display="none";
+  modalContent.innerHTML="";
 }
-modalBackdrop.addEventListener('click', (e)=>{
+modalBackdrop.addEventListener("click",e=>{
   if(e.target===modalBackdrop) closeModal();
 });
 
-/* -------------------------------
-   Stats
---------------------------------*/
-function updateStats() {
-  const all = getRequests();
-  const total = all.length;
-  const assigned = all.filter(r => r.status==='Assigned').length;
-  const ignored  = all.filter(r => r.status==='Ignored').length;
-
-  document.getElementById('statsArea').textContent =
-    `Requests: ${total} · Assigned: ${assigned} · Ignored: ${ignored}`;
-}
-
-/* -------------------------------
-   Populate staff filter
---------------------------------*/
-function populateStaffFilter(){
-  const staff = getStaff();
-  const sf = document.getElementById('staffFilter');
-  sf.innerHTML = '<option value="">All Staff</option>' +
-    staff.map(s=>`<option value="${s}">${s}</option>`).join('');
-}
-
-/* -------------------------------
-   Render table
---------------------------------*/
+/* TABLE */
 function statusTag(s){
-  s = s||'Pending';
   return `<span class="status-tag status-${s.replace(/ /g,'-')}">${s}</span>`;
 }
 
+function updateStats(){
+  let all=getRequests();
+  let total=all.length;
+  let assigned=all.filter(r=>r.status==="Assigned").length;
+  let ignored=all.filter(r=>r.status==="Ignored").length;
+  document.getElementById("statsArea").innerText=
+    `Requests: ${total} · Assigned: ${assigned} · Ignored: ${ignored}`;
+}
+
 function render(){
-  const tbody = document.querySelector('#reqTable tbody');
-  tbody.innerHTML = '';
+  let all=getRequests();
+  let body=document.querySelector("#reqTable tbody");
+  body.innerHTML="";
 
-  const all = getRequests();
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const statusFilter = document.getElementById('filterStatus').value;
-  const staffFilter  = document.getElementById('staffFilter').value;
-  const activeTab = document.querySelector('.tab.active').dataset.cat;
+  let tab=document.querySelector(".tab.active").dataset.cat;
+  let search=document.getElementById("searchInput").value.toLowerCase();
+  let statusFilter=document.getElementById("filterStatus").value;
+  let staffFilter=document.getElementById("staffFilter").value;
 
-  const filtered = all.filter(r=>{
-    if(activeTab!=='all' && r.type!==activeTab) return false;
+  let filtered=all.filter(r=>{
+    if(tab!=="all" && r.type!==tab) return false;
     if(statusFilter && r.status!==statusFilter) return false;
-    if(staffFilter && (r.assigned_to||'')!==staffFilter) return false;
+    if(staffFilter && (r.assigned_to||"")!==staffFilter) return false;
     if(search && !(
-      (r.name||'').toLowerCase().includes(search) ||
-      (r.room||'').toString().includes(search) ||
-      (r.service||'').toLowerCase().includes(search)
+      (r.name||"").toLowerCase().includes(search) ||
+      (r.room||"").toString().includes(search) ||
+      (r.service||"").toLowerCase().includes(search)
     )) return false;
     return true;
   });
 
   filtered.slice().reverse().forEach((r,i)=>{
-    const idx = all.length - 1 - i;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+    let idx=all.length-1-i;
+    let tr=document.createElement("tr");
+    tr.innerHTML=`
       <td>${idx+1}</td>
       <td>${r.type}</td>
       <td>${r.service}</td>
@@ -275,268 +228,149 @@ function render(){
         <button class="btn inprogress" data-inprogress="${idx}">Start</button>
         <button class="btn complete" data-complete="${idx}">Complete</button>
         <button class="btn ignore" data-ignore="${idx}">Ignore</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
+      </td>`;
+    body.appendChild(tr);
   });
 
   updateStats();
 }
 
-/* -------------------------------
-   Table Action Delegation
---------------------------------*/
-document.addEventListener('click',(e)=>{
+/* ACTIONS */
+document.addEventListener("click",e=>{
+  let el=e.target;
 
-  const el = e.target;
   if(el.dataset.assign){
-    const idx = +el.dataset.assign;
-    const staffSel = document.querySelector(`select.select-staff[data-idx="${idx}"]`);
-    const staff = staffSel.value;
-    if(!staff) return alert('Choose staff');
-    const all = getRequests();
-    all[idx].status='Assigned';
+    let idx=+el.dataset.assign;
+    let staff=document.querySelector(`.select-staff[data-idx="${idx}"]`).value;
+    if(!staff)return alert("Select staff");
+    let all=getRequests();
+    all[idx].status="Assigned";
     all[idx].assigned_to=staff;
-    setRequests(all); render();
+    setRequests(all);render();
   }
-
   if(el.dataset.inprogress){
-    const idx = +el.dataset.inprogress;
-    const all = getRequests();
-    all[idx].status='In Progress';
-    setRequests(all); render();
+    let idx=+el.dataset.inprogress;
+    let all=getRequests();
+    all[idx].status="In Progress";
+    setRequests(all);render();
   }
-
   if(el.dataset.complete){
-    const idx = +el.dataset.complete;
-    const all = getRequests();
-    all[idx].status='Completed';
-    setRequests(all); render();
+    let idx=+el.dataset.complete;
+    let all=getRequests();
+    all[idx].status="Completed";
+    setRequests(all);render();
   }
-
   if(el.dataset.ignore){
-    const idx = +el.dataset.ignore;
-    if(!confirm('Ignore this request?')) return;
-    const all = getRequests();
-    all[idx].status='Ignored';
-    setRequests(all); render();
+    let idx=+el.dataset.ignore;
+    if(!confirm("Ignore this?"))return;
+    let all=getRequests();
+    all[idx].status="Ignored";
+    setRequests(all);render();
   }
 });
 
-/* -------------------------------
-   Clear ignored
---------------------------------*/
-document.getElementById('clearIgnoredBtn').onclick = ()=>{
-  if(!confirm('Clear all ignored requests?')) return;
-  const all = getRequests().filter(r=>r.status!=='Ignored');
-  setRequests(all); render();
+/* Filters */
+document.getElementById("tabs").onclick=e=>{
+  if(e.target.classList.contains("tab")){
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    e.target.classList.add("active");
+    render();
+  }
 };
+document.getElementById("searchInput").oninput=render;
+document.getElementById("filterStatus").onchange=render;
+document.getElementById("staffFilter").onchange=render;
 
-/* -------------------------------
-   Tabs
---------------------------------*/
-document.getElementById('tabs').addEventListener('click',(e)=>{
-  if(!e.target.classList.contains('tab')) return;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  e.target.classList.add('active');
-  render();
-});
-
-/* -------------------------------
-   Search + filters
---------------------------------*/
-document.getElementById('searchInput').oninput=render;
-document.getElementById('filterStatus').onchange=render;
-document.getElementById('staffFilter').onchange=render;
-
-/* -------------------------------
-   Sidebar Actions
---------------------------------*/
-document.querySelectorAll('.sb-item').forEach(item=>{
+/* Sidebar */
+document.querySelectorAll(".sb-item").forEach(item=>{
   item.onclick=()=>{
-    document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
-    item.classList.add('active');
+    document.querySelectorAll(".sb-item").forEach(i=>i.classList.remove("active"));
+    item.classList.add("active");
 
-    const action = item.dataset.action;
-    if(action==='dashboard') {
-      document.querySelector('.tab[data-cat="all"]').click();
-    }
-    else if(action==='assignments') {
-      document.querySelector('.tab[data-cat="all"]').click();
-    }
-    else if(action==='add-staff') {
-      openAddStaff();
-    }
-    else if(action==='add-food') {
-      openAddFood();
-    }
-    else if(action==='generate-qr') {
-      openGenerateQR();
-    }
-    else if(action==='settings') {
-      openSettings();
-    }
+    let a=item.dataset.action;
+    if(a==="dashboard"){document.querySelector('.tab[data-cat="all"]').click();}
+    else if(a==="assignments"){document.querySelector('.tab[data-cat="all"]').click();}
+    else if(a==="add-staff"){openAddStaff();}
+    else if(a==="add-food"){openAddFood();}
+    else if(a==="settings"){openSettings();}
   };
 });
 
-/* -------------------------------
-   Add Staff Modal
---------------------------------*/
+/* Add Staff */
 function openAddStaff(){
   openModal(`
     <h3>Add New Staff</h3>
-    <div class="form-row"><input id="newStaffName" placeholder="Name" /></div>
-    <div style="text-align:right">
-      <button onclick="closeModal()" class="btn">Cancel</button>
-      <button onclick="addStaff()" class="btn assign">Add</button>
-    </div>
+    <input id="newStaffName" placeholder="Name" class="form-row"/>
+    <button onclick="closeModal()" class="btn">Cancel</button>
+    <button onclick="addStaff()" class="btn assign">Add</button>
   `);
 }
 function addStaff(){
-  const name = document.getElementById('newStaffName').value.trim();
-  if(!name) return alert('Enter staff');
-  const staff = getStaff();
-  if(staff.includes(name)) return alert('Staff exists');
-  staff.push(name);
+  let n=document.getElementById("newStaffName").value.trim();
+  if(!n)return alert("Enter name");
+  let staff=getStaff();
+  if(staff.includes(n))return alert("Staff exists");
+  staff.push(n);
   setStaff(staff);
   populateStaffFilter();
   closeModal();
-  alert('Staff added');
 }
 
-/* -------------------------------
-   Add Food Modal
---------------------------------*/
+/* Add Food */
 function openAddFood(){
-  const categories = Object.keys(getFood());
+  let cats=Object.keys(getFood());
   openModal(`
     <h3>Add Food Item</h3>
-    <div class="form-row">
-      <input id="foodCategory" placeholder="Category" value="${categories[0]||''}" />
-    </div>
-    <div class="form-row"><input id="foodName" placeholder="Item name" /></div>
-    <div class="form-row"><input id="foodPrice" type="number" placeholder="Price" /></div>
-
-    <div style="text-align:right">
-      <button onclick="closeModal()" class="btn">Cancel</button>
-      <button onclick="addFoodItem()" class="btn assign">Add</button>
-    </div>
+    <input id="foodCategory" placeholder="Category" value="${cats[0]||''}" class="form-row"/>
+    <input id="foodName" placeholder="Item" class="form-row"/>
+    <input id="foodPrice" type="number" placeholder="Price" class="form-row"/>
+    <button onclick="closeModal()" class="btn">Cancel</button>
+    <button onclick="addFoodItem()" class="btn assign">Add</button>
   `);
 }
 function addFoodItem(){
-  const cat = document.getElementById('foodCategory').value.trim();
-  const name= document.getElementById('foodName').value.trim();
-  const price=document.getElementById('foodPrice').value.trim();
-  if(!cat || !name || !price) return alert('Fill details');
-
-  const menu=getFood();
-  if(!menu[cat]) menu[cat]=[];
-  menu[cat].push({name, price});
+  let cat=document.getElementById("foodCategory").value.trim();
+  let n=document.getElementById("foodName").value.trim();
+  let p=document.getElementById("foodPrice").value.trim();
+  if(!cat||!n||!p)return alert("Fill details");
+  let menu=getFood();
+  if(!menu[cat])menu[cat]=[];
+  menu[cat].push({name:n,price:p});
   setFood(menu);
-
   closeModal();
-  alert('Food item added');
 }
 
-/* -------------------------------
-   Settings Modal
---------------------------------*/
+/* Settings */
 function openSettings(){
-  const pin = localStorage.getItem('adminPin')||'4321';
   openModal(`
     <h3>Settings</h3>
-    <div class="form-row"><input id="setPin" placeholder="4-6 digit PIN" value="${pin}" /></div>
-    <div class="form-row"><input id="setStaff" placeholder="comma separated staff" value="${getStaff().join(',')}" /></div>
-
-    <div style="text-align:right">
-      <button onclick="closeModal()" class="btn">Cancel</button>
-      <button onclick="saveSettings()" class="btn assign">Save</button>
-    </div>
+    <input id="setPin" placeholder="PIN (4 digits)" class="form-row"/>
+    <input id="setStaff" value="${getStaff().join(',')}" class="form-row"/>
+    <button onclick="closeModal()" class="btn">Cancel</button>
+    <button onclick="saveSettings()" class="btn assign">Save</button>
   `);
 }
 function saveSettings(){
-  const pin = document.getElementById('setPin').value.trim();
-  const staffCSV = document.getElementById('setStaff').value.trim();
-
-  if(pin && !/^\d{4,6}$/.test(pin)) return alert('Invalid PIN');
-  if(pin) localStorage.setItem('adminPin', pin);
-
-  const list = staffCSV.split(',').map(s=>s.trim()).filter(Boolean);
-  setStaff(list);
+  let s=document.getElementById("setStaff").value.trim();
+  setStaff(s.split(',').map(x=>x.trim()));
   populateStaffFilter();
-
   closeModal();
-  alert('Settings saved');
 }
 
-/* -------------------------------
-   QR Code Generator
---------------------------------*/
-function openGenerateQR(){
-  openModal(`
-    <h3>Generate Room QR Code</h3>
+/* Logout */
+document.getElementById("logoutBtn").onclick=()=>{localStorage.removeItem("adminAuth");location.href="login.html"};
+document.getElementById("logoutLink").onclick=()=>localStorage.removeItem("adminAuth");
 
-    <div class="form-row">
-      <label class="small-muted">Room Number</label>
-      <input id="qrRoomInput" type="number" placeholder="e.g. 203" />
-    </div>
-
-    <div id="qrPreview" style="text-align:center;margin-top:10px;"></div>
-
-    <div style="text-align:right;margin-top:12px">
-      <button onclick="closeModal()" class="btn">Close</button>
-      <button onclick="generateQR()" class="btn assign">Generate</button>
-    </div>
-  `);
+/* Init */
+function populateStaffFilter(){
+  let s=getStaff();
+  let el=document.getElementById("staffFilter");
+  el.innerHTML='<option value="">All Staff</option>'+s.map(x=>`<option>${x}</option>`).join('');
 }
 
-function generateQR(){
-  const room = document.getElementById('qrRoomInput').value.trim();
-  if(!room) return alert('Enter room');
-
-  const baseURL = "https://infovarunapower-dev.github.io/hotel_portal/";
-  const roomLink = `${baseURL}?room=${room}`;
-
-  const cont = document.getElementById('qrPreview');
-  cont.innerHTML = `
-    <p><strong>Room Link:</strong><br>${roomLink}</p>
-    <canvas id="qrCanvas"></canvas><br>
-    <button class="btn assign" onclick="downloadQR()">Download QR</button>
-  `;
-
-  const canvas = document.getElementById('qrCanvas');
-  const qr = new QRious({
-    element: canvas,
-    value: roomLink,
-    size: 200
-  });
-
-  window.generatedQR = qr;
-}
-
-function downloadQR(){
-  const a = document.createElement('a');
-  a.href = window.generatedQR.toDataURL();
-  a.download = "Room_QR.png";
-  a.click();
-}
-
-/* -------------------------------
-   Logout
---------------------------------*/
-document.getElementById('logoutBtn').onclick = ()=>{
-  localStorage.removeItem('adminAuth');
-  location.href='login.html';
-};
-document.getElementById('logoutLink').onclick = ()=>{
-  localStorage.removeItem('adminAuth');
-};
-
-/* -------------------------------
-   Init
---------------------------------*/
 populateStaffFilter();
 render();
+
 </script>
 </body>
 </html>
