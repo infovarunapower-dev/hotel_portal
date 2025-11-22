@@ -20,19 +20,16 @@ class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hove
 </a>
 
 <!-- ================================================== -->
-<!-- STEP 1: GUEST DETAILS SCREEN -->
+<!-- STEP 1: ASK ONLY ROOM NUMBER  -->
 <!-- ================================================== -->
 
 <div id="guestFormSection" class="max-w-md mx-auto bg-white shadow-xl p-8 rounded-xl mt-16">
-    <h2 class="text-2xl font-bold mb-4 text-gray-700 text-center">Guest Details</h2>
+    <h2 class="text-2xl font-bold mb-4 text-gray-700 text-center">Enter Your Room Number</h2>
 
-    <input id="guestNameInput" type="text" placeholder="Enter your name"
+    <input id="guestRoomInput" type="number" placeholder="Room Number"
         class="border w-full p-3 rounded-md mb-4" required />
 
-    <input id="guestRoomInput" type="number" placeholder="Enter your room number"
-        class="border w-full p-3 rounded-md mb-4" required />
-
-    <button onclick="saveGuestDetails()"
+    <button onclick="saveGuestRoom()"
         class="bg-blue-600 text-white w-full py-3 rounded-lg hover:bg-blue-700 transition">
         Continue
     </button>
@@ -130,43 +127,38 @@ class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hove
 <script>
 
 /* =====================================================
-   AUTO LOAD IF USER ALREADY LOGGED IN
+   AUTO-LOAD ROOM ON PAGE LOAD
 ===================================================== */
 window.addEventListener("DOMContentLoaded", () => {
-    const savedName = localStorage.getItem("guestName");
     const savedRoom = localStorage.getItem("guestRoom");
 
-    if (savedName && savedRoom) {
-        // hide form
+    if (savedRoom) {
         document.getElementById("guestFormSection").classList.add("hidden");
 
-        // show main portal
         document.getElementById("mainPortal").classList.remove("hidden");
         document.getElementById("mainMenu").classList.remove("hidden");
         document.getElementById("categorySection").classList.add("hidden");
 
-        // welcome text
         document.getElementById("welcomeText").innerText =
-            `Welcome, ${savedName} (Room ${savedRoom})`;
+            `Welcome, Guest (Room ${savedRoom})`;
     }
 });
 
 /* =====================================================
-   SAVE GUEST DETAILS (ASK ONLY 1 TIME)
+   SAVE ONLY ROOM (NO NAME)
 ===================================================== */
-function saveGuestDetails() {
-    const name = document.getElementById("guestNameInput").value.trim();
+function saveGuestRoom() {
     const room = document.getElementById("guestRoomInput").value.trim();
+    if (!room) return alert("Please enter room number");
 
-    if (!name || !room) return alert("Please enter your details");
-
-    localStorage.setItem("guestName", name);
+    localStorage.setItem("guestName", "Guest");   // default name
     localStorage.setItem("guestRoom", room);
 
     document.getElementById("guestFormSection").classList.add("hidden");
     document.getElementById("mainPortal").classList.remove("hidden");
+
     document.getElementById("welcomeText").innerText =
-        `Welcome, ${name} (Room ${room})`;
+        `Welcome, Guest (Room ${room})`;
 }
 
 /* =====================================================
@@ -280,7 +272,7 @@ function goBack() {
 document.getElementById("requestForm").onsubmit = function (e) {
     e.preventDefault();
 
-    const name = localStorage.getItem("guestName");
+    const name = localStorage.getItem("guestName"); // always "Guest"
     const room = localStorage.getItem("guestRoom");
     const details = document.getElementById("requestDetails").value.trim();
 
@@ -306,7 +298,7 @@ document.getElementById("requestForm").onsubmit = function (e) {
 };
 
 /* =====================================================
-   CART SYSTEM
+   CART SYSTEM (unchanged)
 ===================================================== */
 
 function getCart() { return JSON.parse(localStorage.getItem("cart") || "[]"); }
@@ -417,8 +409,8 @@ document.getElementById("placeOrderBtn").onclick = () => {
     const cart = getCart();
     if (!cart.length) return alert("Cart is empty.");
 
-    const name = localStorage.getItem("guestName") || "";
-    const room = localStorage.getItem("guestRoom") || "";
+    const name = "Guest"; 
+    const room = localStorage.getItem("guestRoom");
 
     const details = cart
         .map((i) => `${i.name} ×${i.qty} (₹${i.price})`)
@@ -431,7 +423,7 @@ document.getElementById("placeOrderBtn").onclick = () => {
         service: "Food Order",
         name,
         room,
-        details: details + ` — Total: ₹${total}`,
+        details: `${details} — Total: ₹${total}`,
         status: "Pending",
         assigned_to: "",
         time: new Date().toLocaleString(),
