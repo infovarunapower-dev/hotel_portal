@@ -7,7 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        .cart-panel { transition: transform .3s ease, opacity .3s ease; }
+        .cart-panel {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
     </style>
 </head>
 
@@ -19,9 +21,9 @@ class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hove
 🏠 Home
 </a>
 
-<!-- ============================= -->
-<!-- STEP 1: GUEST DETAILS SCREEN -->
-<!-- ============================= -->
+<!-- ================================================== -->
+<!-- STEP 1: GUEST DETAILS SCREEN (Shown only first time) -->
+<!-- ================================================== -->
 
 <div id="guestFormSection" class="max-w-md mx-auto bg-white shadow-xl p-8 rounded-xl mt-16">
     <h2 class="text-2xl font-bold mb-4 text-gray-700 text-center">Guest Details</h2>
@@ -38,9 +40,10 @@ class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hove
     </button>
 </div>
 
-<!-- ============================= -->
-<!-- MAIN PORTAL -->
-<!-- ============================= -->
+<!-- ================================================== -->
+<!-- STEP 2: MAIN PORTAL -->
+<!-- ================================================== -->
+
 <div id="mainPortal" class="hidden flex flex-col items-center">
 
     <h1 id="welcomeText" class="text-3xl font-bold text-gray-800 mt-10 mb-6"></h1>
@@ -71,6 +74,7 @@ class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hove
     <!-- CATEGORY SECTION -->
     <div id="categorySection"
         class="hidden w-full max-w-4xl bg-white p-8 mt-10 rounded-2xl shadow-xl relative">
+        
         <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
 
         <div id="optionsList" class="flex flex-col gap-4 mb-6"></div>
@@ -91,9 +95,9 @@ class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hove
     </div>
 </div>
 
-<!-- ============================= -->
+<!-- ================================================== -->
 <!-- SIDE CART PANEL -->
-<!-- ============================= -->
+<!-- ================================================== -->
 
 <div id="cartOverlay" class="fixed inset-0 z-40 hidden bg-black/40"></div>
 
@@ -120,37 +124,75 @@ class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hove
     </div>
 </aside>
 
-<!-- ============================= -->
+
+<!-- ================================================== -->
 <!-- JAVASCRIPT -->
-<!-- ============================= -->
+<!-- ================================================== -->
 
 <script>
-/* ------------------------------------------------
-   1. SAVE GUEST DETAILS FIRST
------------------------------------------------- */
+
+/* =====================================================
+   1. QR AUTO-DETECT → AUTO-FILL ROOM
+===================================================== */
+
+(function checkQR() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const qrRoom = urlParams.get("room");
+
+    if (qrRoom) {
+        localStorage.setItem("guestRoom", qrRoom);
+        document.getElementById("guestRoomInput").value = qrRoom;
+        document.getElementById("guestRoomInput").disabled = true;
+    }
+})();
+
+/* =====================================================
+   2. AUTO-SHOW PORTAL IF ALREADY SAVED
+===================================================== */
+
+window.onload = function () {
+    const savedName = localStorage.getItem("guestName");
+    const savedRoom = localStorage.getItem("guestRoom");
+
+    if (savedRoom) document.getElementById("guestRoomInput").value = savedRoom;
+
+    if (savedName && savedRoom) {
+        document.getElementById("guestFormSection").classList.add("hidden");
+        document.getElementById("mainPortal").classList.remove("hidden");
+        document.getElementById("welcomeText").innerText =
+            `Welcome, ${savedName} (Room ${savedRoom})`;
+    }
+};
+
+/* =====================================================
+   3. SAVE GUEST DETAILS
+===================================================== */
+
 function saveGuestDetails() {
     const name = document.getElementById("guestNameInput").value.trim();
-    const room = document.getElementById("guestRoomInput").value.trim();
+    let room = document.getElementById("guestRoomInput").value.trim();
 
-    if (!name || !room) {
-        alert("Please enter both your name and room number.");
-        return;
+    if (!name) return alert("Please enter your name");
+
+    if (!room) {
+        const savedRoom = localStorage.getItem("guestRoom");
+        if (!savedRoom) return alert("Enter room number");
+        room = savedRoom;
     }
 
     localStorage.setItem("guestName", name);
     localStorage.setItem("guestRoom", room);
 
     document.getElementById("guestFormSection").classList.add("hidden");
-
-    const welcomeText = document.getElementById("welcomeText");
-    welcomeText.innerText = `Welcome, ${name} (Room ${room})`;
-
     document.getElementById("mainPortal").classList.remove("hidden");
+    document.getElementById("welcomeText").innerText =
+        `Welcome, ${name} (Room ${room})`;
 }
 
-/* ------------------------------------------------
-   2. SERVICES CONFIGURATION
------------------------------------------------- */
+/* =====================================================
+   4. CATEGORY CONFIG
+===================================================== */
+
 let currentCategory = "";
 let currentService = "";
 
@@ -181,9 +223,10 @@ const services = {
     }
 };
 
-/* ------------------------------------------------
-   3. SHOW CATEGORY SECTION
------------------------------------------------- */
+/* =====================================================
+   5. SHOW CATEGORY PAGE
+===================================================== */
+
 function showSection(category) {
     currentCategory = category;
     currentService = "";
@@ -196,13 +239,9 @@ function showSection(category) {
     const list = document.getElementById("optionsList");
     list.innerHTML = "";
 
-    // Load dynamic food menu
+    // FOOD dynamic menu
     if (section.dynamic) {
         const menuData = JSON.parse(localStorage.getItem("foodMenu") || "{}");
-        if (!Object.keys(menuData).length) {
-            list.innerHTML = "<p>No food items available.</p>";
-            return;
-        }
 
         Object.keys(menuData).forEach((cat) => {
             const header = document.createElement("h3");
@@ -217,16 +256,16 @@ function showSection(category) {
                     "flex items-center justify-between bg-gray-100 p-4 rounded-lg";
 
                 row.innerHTML = `
-                <div>
-                    <div class="font-semibold">${item.name}</div>
-                    <div class="text-sm text-gray-600">₹${item.price}</div>
-                </div>
-                <button class="bg-green-600 text-white px-3 py-1 rounded add-cart">
-                    Add to Cart
-                </button>
-            `;
+                    <div>
+                        <div class="font-semibold">${item.name}</div>
+                        <div class="text-sm text-gray-600">₹${item.price}</div>
+                    </div>
+                    <button class="bg-green-600 text-white px-3 py-1 rounded add-cart">
+                        Add to Cart
+                    </button>
+                `;
 
-                // Add to cart event
+                // add to cart
                 row.querySelector(".add-cart").onclick = () =>
                     addToCart(item.name, Number(item.price));
 
@@ -237,13 +276,13 @@ function showSection(category) {
         return;
     }
 
-    // NON-FOOD services
+    // Non-food services
     section.options.forEach((opt) => {
         const btn = document.createElement("button");
-        btn.type = "button";
         btn.className =
             "bg-gray-100 hover:bg-blue-100 font-semibold py-3 rounded-lg";
         btn.innerText = opt;
+
         btn.onclick = () => {
             currentService = opt;
             document
@@ -251,22 +290,21 @@ function showSection(category) {
                 .forEach((b) => b.classList.remove("bg-blue-200"));
             btn.classList.add("bg-blue-200");
         };
+
         list.appendChild(btn);
     });
 }
 
-/* ------------------------------------------------
-   4. BACK TO MAIN MENU
------------------------------------------------- */
 function goBack() {
     document.getElementById("mainMenu").classList.remove("hidden");
     document.getElementById("categorySection").classList.add("hidden");
 }
 
-/* ------------------------------------------------
-   5. REQUEST SUBMISSION (NON-FOOD)
------------------------------------------------- */
-document.getElementById("requestForm").addEventListener("submit", (e) => {
+/* =====================================================
+   6. SUBMIT NON-FOOD REQUESTS
+===================================================== */
+
+document.getElementById("requestForm").onsubmit = function (e) {
     e.preventDefault();
 
     const name = localStorage.getItem("guestName");
@@ -289,13 +327,15 @@ document.getElementById("requestForm").addEventListener("submit", (e) => {
     localStorage.setItem("requests", JSON.stringify(all));
 
     alert("Request submitted successfully!");
-    e.target.reset();
-    goBack();
-});
 
-/* ------------------------------------------------
-   6. CART SYSTEM (SIDE CART)
------------------------------------------------- */
+    this.reset();
+    goBack();
+};
+
+/* =====================================================
+   7. CART SYSTEM
+===================================================== */
+
 function getCart() {
     return JSON.parse(localStorage.getItem("cart") || "[]");
 }
@@ -360,7 +400,6 @@ function closeCart() {
 document.getElementById("closeCartBtn").onclick = closeCart;
 cartOverlay.onclick = closeCart;
 
-// Floating cart button
 const floatBtn = document.createElement("button");
 floatBtn.innerText = "🛒 Cart";
 floatBtn.className =
@@ -368,7 +407,6 @@ floatBtn.className =
 floatBtn.onclick = openCart;
 document.body.appendChild(floatBtn);
 
-// Add to cart
 function addToCart(name, price) {
     const cart = getCart();
     const found = cart.find((c) => c.name === name);
@@ -380,7 +418,6 @@ function addToCart(name, price) {
     openCart();
 }
 
-// Cart buttons
 cartItemsEl.addEventListener("click", (e) => {
     const cart = getCart();
 
@@ -401,7 +438,11 @@ cartItemsEl.addEventListener("click", (e) => {
     renderCart();
 });
 
-// Place order: convert cart → admin request
+document.getElementById("clearCartBtn").onclick = () => {
+    setCart([]);
+    renderCart();
+};
+
 document.getElementById("placeOrderBtn").onclick = () => {
     const cart = getCart();
     if (!cart.length) return alert("Cart is empty.");
@@ -437,8 +478,8 @@ document.getElementById("placeOrderBtn").onclick = () => {
     closeCart();
 };
 
-// Initialize cart on load
 renderCart();
 </script>
+
 </body>
 </html>
