@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Hotel Management Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* small override for cart animation */
+      .cart-panel {
+        transition: transform .28s ease, opacity .28s ease;
+      }
+    </style>
   </head>
-
-  <body
-    class="bg-gradient-to-br from-blue-100 via-white to-blue-200 min-h-screen flex flex-col items-center p-6"
-  >
+  <body class="bg-gradient-to-br from-blue-100 via-white to-blue-200 min-h-screen flex flex-col items-center p-6">
 
     <!-- HOME BUTTON -->
     <a href="index.html"
@@ -17,95 +20,94 @@
       🏠 Home
     </a>
 
-    <h1 class="text-4xl font-bold mb-10 text-gray-800">
-      🏨 Hotel Management Portal
-    </h1>
+    <h1 class="text-4xl font-bold mb-10 text-gray-800">🏨 Hotel Management Portal</h1>
 
     <!-- MAIN MENU -->
-    <div
-      id="mainMenu"
-      class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl"
-    >
-      <button
-        onclick="showSection('housekeeping')"
-        class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center"
-      >
+    <div id="mainMenu" class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl">
+      <button onclick="showSection('housekeeping')" class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
         🧹
         <h2 class="text-xl font-semibold mt-2">Housekeeping</h2>
       </button>
 
-      <button
-        onclick="showSection('travel')"
-        class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center"
-      >
+      <button onclick="showSection('travel')" class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
         🚗
         <h2 class="text-xl font-semibold mt-2">Travel</h2>
       </button>
 
-      <button
-        onclick="showSection('food')"
-        class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center"
-      >
+      <button onclick="showSection('food')" class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
         🍽️
         <h2 class="text-xl font-semibold mt-2">Food Menu</h2>
       </button>
     </div>
 
     <!-- CATEGORY SECTION -->
-    <div
-      id="categorySection"
-      class="hidden w-full max-w-2xl bg-white p-8 mt-10 rounded-2xl shadow-xl"
-    >
+    <div id="categorySection" class="hidden w-full max-w-4xl bg-white p-8 mt-10 rounded-2xl shadow-xl relative">
       <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
 
       <!-- Sub-options / dynamic food menu -->
-      <div
-        id="optionsList"
-        class="flex flex-col gap-4 mb-6"
-      ></div>
+      <div id="optionsList" class="flex flex-col gap-4 mb-6"></div>
 
-      <!-- Request Form -->
+      <!-- Request Form for non-food categories -->
       <form id="requestForm" class="space-y-4">
-        <input
-          id="guestName"
-          type="text"
-          placeholder="Your Name"
-          class="border w-full p-3 rounded-md"
-          required
-        />
+        <input id="guestName" type="text" placeholder="Your Name" class="border w-full p-3 rounded-md" required />
+        <input id="roomNumber" type="number" placeholder="Room Number" class="border w-full p-3 rounded-md" required />
+        <textarea id="requestDetails" placeholder="Additional details..." class="border w-full p-3 rounded-md"></textarea>
 
-        <input
-          id="roomNumber"
-          type="number"
-          placeholder="Room Number"
-          class="border w-full p-3 rounded-md"
-          required
-        />
-
-        <textarea
-          id="requestDetails"
-          placeholder="Additional details..."
-          class="border w-full p-3 rounded-md"
-        ></textarea>
-
-        <button
-          type="submit"
-          class="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 w-full"
-        >
+        <button type="submit" id="submitRequestBtn" class="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 w-full">
           Submit Request
         </button>
 
-        <button
-          type="button"
-          onclick="goBack()"
-          class="text-gray-500 underline w-full mt-2"
-        >
-          ⬅️ Back
-        </button>
+        <button type="button" onclick="goBack()" class="text-gray-500 underline w-full mt-2">⬅️ Back</button>
       </form>
     </div>
 
+    <!-- SIDE CART PANEL -->
+    <div id="cartOverlay" class="fixed inset-0 z-40 hidden bg-black/40"></div>
+    <aside id="cartPanel" class="cart-panel fixed top-0 right-0 h-full w-96 max-w-full transform translate-x-full z-50 bg-white shadow-2xl p-6 overflow-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold">🛒 Your Cart</h3>
+        <button id="closeCartBtn" class="text-gray-600 hover:text-black">Close</button>
+      </div>
+
+      <div id="cartItems" class="space-y-3 mb-4">
+        <!-- items generated here -->
+      </div>
+
+      <div class="border-t pt-4">
+        <div class="flex justify-between items-center mb-3">
+          <span class="font-semibold">Subtotal</span>
+          <span id="cartSubtotal" class="font-bold">₹0</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <button id="placeOrderBtn" class="bg-blue-600 text-white py-3 rounded-md">Place Order</button>
+          <button id="clearCartBtn" class="mt-2 bg-gray-200 text-gray-700 py-2 rounded-md">Clear Cart</button>
+        </div>
+      </div>
+    </aside>
+
     <script>
+      // ---------- Helpers & initial data ----------
+      if(!localStorage.getItem('foodMenu')) {
+        // sample default menu if none exists
+        localStorage.setItem('foodMenu', JSON.stringify({
+          "Breakfast":[{"name":"Idli & Sambar","price":"80"},{"name":"Dosa","price":"90"}],
+          "Lunch":[{"name":"Veg Thali","price":"150"},{"name":"Chicken Curry with Rice","price":"180"}],
+          "Dinner":[{"name":"Fried Rice","price":"140"},{"name":"Chapati & Paneer","price":"160"}]
+        }));
+      }
+
+      // ensure requests and cart exist
+      if(!localStorage.getItem('requests')) localStorage.setItem('requests', JSON.stringify([]));
+      if(!localStorage.getItem('cart')) localStorage.setItem('cart', JSON.stringify([]));
+
+      function getRequests(){ return JSON.parse(localStorage.getItem('requests') || '[]'); }
+      function setRequests(arr){ localStorage.setItem('requests', JSON.stringify(arr)); }
+      function getCart(){ return JSON.parse(localStorage.getItem('cart') || '[]'); }
+      function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
+      function getFood(){ return JSON.parse(localStorage.getItem('foodMenu') || '{}'); }
+
+      // ---------- State ----------
       let currentCategory = "";
       let currentService = "";
 
@@ -120,7 +122,6 @@
             "Other Requests",
           ],
         },
-
         travel: {
           title: "🚗 Travel Assistance",
           options: [
@@ -131,114 +132,287 @@
             "Other Travel Help",
           ],
         },
-
-        // Dynamic Food Menu Category
         food: {
           title: "🍽️ Food Menu",
           dynamic: true,
-        },
+        }
       };
 
-      function showSection(category) {
+      // ---------- Show sections ----------
+      function showSection(category){
         currentCategory = category;
         currentService = "";
         const section = services[category];
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('categorySection').classList.remove('hidden');
+        document.getElementById('categoryTitle').innerText = section.title;
 
-        document.getElementById("mainMenu").classList.add("hidden");
-        document.getElementById("categorySection").classList.remove("hidden");
-        document.getElementById("categoryTitle").innerText = section.title;
+        const list = document.getElementById('optionsList');
+        list.innerHTML = '';
 
-        const list = document.getElementById("optionsList");
-        list.innerHTML = "";
+        // FOOD dynamic listing (full menu)
+        if(section.dynamic){
+          const menu = getFood();
+          if(Object.keys(menu).length === 0){
+            const p = document.createElement('p');
+            p.className = 'text-gray-600';
+            p.innerText = 'No food menu available right now.';
+            list.appendChild(p);
+            return;
+          }
 
-        // DYNAMIC FOOD MENU
-        if (section.dynamic) {
-          const menuData = JSON.parse(localStorage.getItem("foodMenu") || "{}");
+          // for each category show header and items
+          Object.keys(menu).forEach(cat => {
+            const header = document.createElement('h3');
+            header.className = 'text-lg font-bold text-gray-700 mt-6';
+            header.innerText = cat;
+            list.appendChild(header);
 
-          Object.keys(menuData).forEach((categoryName) => {
-            const catHeader = document.createElement("h3");
-            catHeader.className = "text-lg font-bold text-gray-700 mt-6";
-            catHeader.innerText = categoryName;
-            list.appendChild(catHeader);
+            menu[cat].forEach(item => {
+              const row = document.createElement('div');
+              row.className = 'flex items-center justify-between bg-gray-100 hover:bg-blue-100 rounded-lg p-4';
+              row.style.cursor = 'default';
 
-            menuData[categoryName].forEach((item) => {
-              const div = document.createElement("button");
-              div.type = "button";
-              div.className =
-                "bg-gray-100 hover:bg-blue-100 text-left font-semibold p-4 rounded-lg shadow-sm w-full";
-              div.innerText = `${item.name} — ₹${item.price}`;
+              const left = document.createElement('div');
+              left.innerHTML = `<div class="font-semibold">${item.name}</div><div class="text-sm text-gray-600">₹${item.price}</div>`;
 
-              div.onclick = () => {
-                currentService = `${item.name} (₹${item.price})`;
+              const right = document.createElement('div');
+              right.innerHTML = `<button class="bg-green-600 text-white px-3 py-1 rounded add-to-cart-btn">Add to Cart</button>`;
 
-                // highlight selected
-                document
-                  .querySelectorAll("#optionsList button")
-                  .forEach((b) =>
-                    b.classList.remove("bg-blue-200", "font-bold")
-                  );
-                div.classList.add("bg-blue-200", "font-bold");
-              };
+              // attach data attributes
+              row.dataset.name = item.name;
+              row.dataset.price = item.price;
 
-              list.appendChild(div);
+              // add click listener for the Add to Cart button
+              right.querySelector('button').addEventListener('click', (e) => {
+                e.stopPropagation();
+                addToCart(item.name, Number(item.price));
+              });
+
+              row.appendChild(left);
+              row.appendChild(right);
+              list.appendChild(row);
             });
           });
 
           return;
         }
 
-        // NORMAL CATEGORIES (HOUSEKEEPING / TRAVEL)
-        section.options.forEach((opt) => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className =
-            "bg-gray-100 hover:bg-blue-100 font-semibold py-3 rounded-lg shadow-sm";
+        // NON-food categories
+        section.options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bg-gray-100 hover:bg-blue-100 font-semibold py-3 rounded-lg shadow-sm';
           btn.innerText = opt;
-
           btn.onclick = () => {
             currentService = opt;
-            document
-              .querySelectorAll("#optionsList button")
-              .forEach((b) => b.classList.remove("bg-blue-200"));
-            btn.classList.add("bg-blue-200");
+            document.querySelectorAll('#optionsList button').forEach(b => b.classList.remove('bg-blue-200'));
+            btn.classList.add('bg-blue-200');
           };
-
           list.appendChild(btn);
         });
       }
 
-      function goBack() {
-        document.getElementById("mainMenu").classList.remove("hidden");
-        document.getElementById("categorySection").classList.add("hidden");
+      function goBack(){
+        document.getElementById('mainMenu').classList.remove('hidden');
+        document.getElementById('categorySection').classList.add('hidden');
       }
 
-      document
-        .getElementById("requestForm")
-        .addEventListener("submit", (e) => {
-          e.preventDefault();
-          const name = guestName.value.trim();
-          const room = roomNumber.value.trim();
-          const details = requestDetails.value.trim();
+      // ---------- Cart UI & Logic ----------
+      const cartPanel = document.getElementById('cartPanel');
+      const cartOverlay = document.getElementById('cartOverlay');
+      const cartItemsEl = document.getElementById('cartItems');
+      const cartSubtotalEl = document.getElementById('cartSubtotal');
 
-          const request = {
-            category: currentCategory,
-            service: currentService || "General Request",
-            name,
-            room,
-            details,
-            time: new Date().toLocaleString(),
-          };
+      function renderCart(){
+        const cart = getCart();
+        cartItemsEl.innerHTML = '';
+        let subtotal = 0;
 
-          const allRequests = JSON.parse(
-            localStorage.getItem("requests") || "[]"
-          );
-          allRequests.push(request);
-          localStorage.setItem("requests", JSON.stringify(allRequests));
+        if(cart.length === 0){
+          cartItemsEl.innerHTML = '<p class="text-gray-600">Cart is empty.</p>';
+        } else {
+          cart.forEach((it, idx) => {
+            const itemRow = document.createElement('div');
+            itemRow.className = 'flex items-center justify-between bg-gray-50 p-3 rounded';
 
-          alert("✅ Request submitted successfully!");
-          e.target.reset();
-          goBack();
+            const left = document.createElement('div');
+            left.innerHTML = `<div class="font-semibold">${it.name}</div><div class="text-sm text-gray-600">₹${it.price} × ${it.qty}</div>`;
+
+            const right = document.createElement('div');
+            right.className = 'flex items-center gap-2';
+            right.innerHTML = `
+              <button class="px-2 py-1 bg-gray-200 rounded dec" data-idx="${idx}">-</button>
+              <div class="w-6 text-center">${it.qty}</div>
+              <button class="px-2 py-1 bg-gray-200 rounded inc" data-idx="${idx}">+</button>
+              <button class="px-2 py-1 text-sm text-red-600 del" data-idx="${idx}">Remove</button>
+            `;
+
+            itemRow.appendChild(left);
+            itemRow.appendChild(right);
+            cartItemsEl.appendChild(itemRow);
+
+            subtotal += it.price * it.qty;
+          });
+        }
+
+        cartSubtotalEl.innerText = '₹' + subtotal;
+        setCart(cart); // persist
+      }
+
+      // open/close cart
+      function openCart(){
+        cartOverlay.classList.remove('hidden');
+        cartPanel.style.transform = 'translateX(0)';
+        cartOverlay.onclick = closeCart;
+        renderCart();
+      }
+      function closeCart(){
+        cartOverlay.classList.add('hidden');
+        cartPanel.style.transform = 'translateX(100%)';
+      }
+
+      document.getElementById('closeCartBtn').addEventListener('click', closeCart);
+      document.getElementById('clearCartBtn').addEventListener('click', () => {
+        if(confirm('Clear cart?')) {
+          setCart([]);
+          renderCart();
+        }
+      });
+
+      // add item to cart
+      function addToCart(name, price){
+        const cart = getCart();
+        const found = cart.find(c => c.name === name && c.price === price);
+        if(found){
+          found.qty += 1;
+        } else {
+          cart.push({name, price, qty:1});
+        }
+        setCart(cart);
+        renderCart();
+        openCart();
+      }
+
+      // handle cart buttons using event delegation
+      cartItemsEl.addEventListener('click', (ev) => {
+        const target = ev.target;
+        if(target.classList.contains('inc')){
+          const idx = Number(target.dataset.idx);
+          const cart = getCart();
+          cart[idx].qty += 1;
+          setCart(cart); renderCart();
+        }
+        if(target.classList.contains('dec')){
+          const idx = Number(target.dataset.idx);
+          const cart = getCart();
+          cart[idx].qty = Math.max(1, cart[idx].qty - 1);
+          setCart(cart); renderCart();
+        }
+        if(target.classList.contains('del')){
+          const idx = Number(target.dataset.idx);
+          const cart = getCart();
+          cart.splice(idx,1);
+          setCart(cart); renderCart();
+        }
+      });
+
+      // place order -> convert cart to a Food request for Admin
+      document.getElementById('placeOrderBtn').addEventListener('click', () => {
+        const cart = getCart();
+        if(cart.length === 0){
+          alert('Cart is empty.');
+          return;
+        }
+        // build details text
+        const itemsText = cart.map(i => `${i.name} ×${i.qty} (₹${i.price})`).join('; ');
+        const subtotal = cart.reduce((s,i) => s + i.qty * i.price, 0);
+        const details = `Order: ${itemsText} — Total: ₹${subtotal}`;
+
+        // ask for guest info before sending: open a small prompt modal
+        const guestName = prompt('Enter your name for the order:','') || '';
+        const roomNumber = prompt('Enter your room number:','') || '';
+
+        if(!roomNumber){
+          alert('Room number required for delivery.');
+          return;
+        }
+
+        const request = {
+          type: 'Food',
+          service: 'Food Order',
+          name: guestName,
+          room: roomNumber,
+          details: details,
+          status: 'Pending',
+          assigned_to: '',
+          time: new Date().toLocaleString()
+        };
+
+        const all = getRequests();
+        all.push(request);
+        setRequests(all);
+
+        // clear cart
+        setCart([]);
+        renderCart();
+        closeCart();
+
+        alert('✅ Order placed! The admin will see it shortly.');
+      });
+
+      // ---------- Request form submission for non-food categories ----------
+      document.getElementById('requestForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('guestName').value.trim();
+        const room = document.getElementById('roomNumber').value.trim();
+        const details = document.getElementById('requestDetails').value.trim();
+
+        const request = {
+          category: currentCategory,
+          service: currentService || 'General Request',
+          name,
+          room,
+          details,
+          status: 'Pending',
+          assigned_to: '',
+          time: new Date().toLocaleString()
+        };
+
+        const all = getRequests();
+        all.push(request);
+        setRequests(all);
+
+        alert('✅ Request submitted successfully!');
+        e.target.reset();
+        goBack();
+      });
+
+      // ---------- Initialization ----------
+      // render initial UI and bind global actions
+      (function init(){
+        // When page loads, also ensure cart layout hidden
+        cartPanel.style.transform = 'translateX(100%)';
+        cartOverlay.classList.add('hidden');
+
+        // open cart if cart has items? not automatically
+        // allow opening cart from anywhere: create keyboard shortcut 'c'
+        window.addEventListener('keydown', (ev) => {
+          if(ev.key === 'c' || ev.key === 'C') openCart();
         });
+
+        // expose openCart globally via window for testing
+        window.openCart = openCart;
+
+        // For convenience add a floating cart button on page
+        const floating = document.createElement('button');
+        floating.innerHTML = '🛒 Cart';
+        floating.className = 'fixed bottom-6 right-6 bg-blue-600 text-white px-4 py-3 rounded-full shadow-lg';
+        floating.onclick = openCart;
+        document.body.appendChild(floating);
+
+        // If user clicks Food Menu, food menu will be loaded (but do not auto-show)
+      })();
     </script>
   </body>
 </html>
