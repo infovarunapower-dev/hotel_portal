@@ -1,447 +1,320 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hotel Management Portal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <style>
-        .cart-panel { transition: transform .3s ease, opacity .3s ease; }
-    </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Hotel Management Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .cart-panel { transition: transform .3s ease, opacity .3s ease; }
+  </style>
 </head>
-
 <body class="bg-gradient-to-br from-blue-100 via-white to-blue-200 min-h-screen p-6">
 
-<!-- HOME BUTTON -->
-<a href="index.html"
-class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hover:bg-gray-100 transition">
-🏠 Home
-</a>
+  <!-- HOME BUTTON -->
+  <a id="homeBtn" href="index.html"
+     class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hover:bg-gray-100 transition">
+    🏠 Home
+  </a>
 
-<!-- ================================================== -->
-<!-- STEP 1: ASK ONLY ROOM NUMBER  -->
-<!-- ================================================== -->
-
-<div id="guestFormSection" class="max-w-md mx-auto bg-white shadow-xl p-8 rounded-xl mt-16">
+  <!-- ROOM INPUT (only room) -->
+  <div id="guestFormSection" class="max-w-md mx-auto bg-white shadow-xl p-8 rounded-xl mt-16">
     <h2 class="text-2xl font-bold mb-4 text-gray-700 text-center">Enter Your Room Number</h2>
 
     <input id="guestRoomInput" type="number" placeholder="Room Number"
-        class="border w-full p-3 rounded-md mb-4" required />
+           class="border w-full p-3 rounded-md mb-4" />
 
-    <button onclick="saveGuestRoom()"
-        class="bg-blue-600 text-white w-full py-3 rounded-lg hover:bg-blue-700 transition">
-        Continue
+    <button id="guestContinueBtn"
+            class="bg-blue-600 text-white w-full py-3 rounded-lg hover:bg-blue-700 transition">
+      Continue
     </button>
-</div>
+  </div>
 
-<!-- ================================================== -->
-<!-- STEP 2: MAIN PORTAL -->
-<!-- ================================================== -->
-
-<div id="mainPortal" class="hidden flex flex-col items-center">
-
+  <!-- MAIN PORTAL -->
+  <div id="mainPortal" class="hidden flex flex-col items-center">
     <h1 id="welcomeText" class="text-3xl font-bold text-gray-800 mt-10 mb-6"></h1>
 
-    <!-- MAIN MENU -->
     <div id="mainMenu" class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl">
+      <button onclick="showSection('housekeeping')" class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
+        🧹<h2 class="text-xl font-semibold mt-2">Housekeeping</h2>
+      </button>
 
-        <button onclick="showSection('housekeeping')"
-            class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
-            🧹
-            <h2 class="text-xl font-semibold mt-2">Housekeeping</h2>
-        </button>
+      <button onclick="showSection('travel')" class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
+        🚗<h2 class="text-xl font-semibold mt-2">Travel</h2>
+      </button>
 
-        <button onclick="showSection('travel')"
-            class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
-            🚗
-            <h2 class="text-xl font-semibold mt-2">Travel</h2>
-        </button>
-
-        <button onclick="showSection('food')"
-            class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
-            🍽️
-            <h2 class="text-xl font-semibold mt-2">Food Menu</h2>
-        </button>
-
+      <button onclick="showSection('food')" class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
+        🍽️<h2 class="text-xl font-semibold mt-2">Food Menu</h2>
+      </button>
     </div>
 
     <!-- CATEGORY SECTION -->
-    <div id="categorySection"
-        class="hidden w-full max-w-4xl bg-white p-8 mt-10 rounded-2xl shadow-xl relative">
-        
-        <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+    <div id="categorySection" class="hidden w-full max-w-4xl bg-white p-8 mt-10 rounded-2xl shadow-xl relative">
+      <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+      <div id="optionsList" class="flex flex-col gap-4 mb-6"></div>
 
-        <div id="optionsList" class="flex flex-col gap-4 mb-6"></div>
-
-        <!-- Request Form (non-food only) -->
-        <form id="requestForm" class="space-y-4">
-            <textarea id="requestDetails" placeholder="Additional details..."
-                class="border w-full p-3 rounded-md"></textarea>
-
-            <button type="submit"
-                class="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 w-full">
-                Submit Request
-            </button>
-
-            <button type="button" onclick="goBack()"
-                class="text-gray-500 underline w-full mt-2">⬅️ Back</button>
-        </form>
+      <form id="requestForm" class="space-y-4">
+        <textarea id="requestDetails" placeholder="Additional details..." class="border w-full p-3 rounded-md"></textarea>
+        <button type="submit" class="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 w-full">Submit Request</button>
+        <button type="button" onclick="goBack()" class="text-gray-500 underline w-full mt-2">⬅️ Back</button>
+      </form>
     </div>
-</div>
+  </div>
 
-<!-- ================================================== -->
-<!-- SIDE CART PANEL -->
-<!-- ================================================== -->
-
-<div id="cartOverlay" class="fixed inset-0 z-40 hidden bg-black/40"></div>
-
-<aside id="cartPanel"
-    class="cart-panel fixed top-0 right-0 h-full w-96 transform translate-x-full z-50 bg-white shadow-2xl p-6 overflow-auto">
-
+  <!-- SIDE CART -->
+  <div id="cartOverlay" class="fixed inset-0 z-40 hidden bg-black/40"></div>
+  <aside id="cartPanel" class="cart-panel fixed top-0 right-0 h-full w-96 transform translate-x-full z-50 bg-white shadow-2xl p-6 overflow-auto">
     <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-bold">🛒 Your Cart</h3>
-        <button id="closeCartBtn" class="text-gray-600 hover:text-black">Close</button>
+      <h3 class="text-xl font-bold">🛒 Your Cart</h3>
+      <button id="closeCartBtn" class="text-gray-600 hover:text-black">Close</button>
     </div>
-
     <div id="cartItems" class="space-y-3 mb-4"></div>
-
     <div class="border-t pt-4">
-        <div class="flex justify-between items-center mb-3">
-            <span class="font-semibold">Subtotal</span>
-            <span id="cartSubtotal" class="font-bold">₹0</span>
-        </div>
-
-        <div class="flex flex-col gap-2">
-            <button id="placeOrderBtn" class="bg-blue-600 text-white py-3 rounded-md">Place Order</button>
-            <button id="clearCartBtn" class="mt-2 bg-gray-200 text-gray-700 py-2 rounded-md">Clear Cart</button>
-        </div>
+      <div class="flex justify-between items-center mb-3">
+        <span class="font-semibold">Subtotal</span>
+        <span id="cartSubtotal" class="font-bold">₹0</span>
+      </div>
+      <div class="flex flex-col gap-2">
+        <button id="placeOrderBtn" class="bg-blue-600 text-white py-3 rounded-md">Place Order</button>
+        <button id="clearCartBtn" class="mt-2 bg-gray-200 text-gray-700 py-2 rounded-md">Clear Cart</button>
+      </div>
     </div>
-</aside>
+  </aside>
 
+  <!-- SCRIPT -->
+  <script>
+  // Use the file you uploaded as reference: /mnt/data/index_1.html. (I inspected it and based fixes on it.) :contentReference[oaicite:1]{index=1}
 
-<!-- ================================================== -->
-<!-- JAVASCRIPT -->
-<!-- ================================================== -->
+  // Safe DOM helper
+  const $ = id => document.getElementById(id);
 
-<script>
-
-/* =====================================================
-   AUTO-LOAD ROOM ON PAGE LOAD
-===================================================== */
-window.addEventListener("DOMContentLoaded", () => {
-    const savedRoom = localStorage.getItem("guestRoom");
-
-    if (savedRoom) {
-        document.getElementById("guestFormSection").classList.add("hidden");
-
-        document.getElementById("mainPortal").classList.remove("hidden");
-        document.getElementById("mainMenu").classList.remove("hidden");
-        document.getElementById("categorySection").classList.add("hidden");
-
-        document.getElementById("welcomeText").innerText =
-            `Welcome, Guest (Room ${savedRoom})`;
-    }
-});
-
-/* =====================================================
-   SAVE ONLY ROOM (NO NAME)
-===================================================== */
-function saveGuestRoom() {
-    const room = document.getElementById("guestRoomInput").value.trim();
-    if (!room) return alert("Please enter room number");
-
-    localStorage.setItem("guestName", "Guest");   // default name
-    localStorage.setItem("guestRoom", room);
-
-    document.getElementById("guestFormSection").classList.add("hidden");
-    document.getElementById("mainPortal").classList.remove("hidden");
-
-    document.getElementById("welcomeText").innerText =
-        `Welcome, Guest (Room ${room})`;
-}
-
-/* =====================================================
-   SHOW CATEGORY PAGE
-===================================================== */
-let currentCategory = "";
-let currentService = "";
-
-const services = {
-    housekeeping: {
-        title: "🧹 Housekeeping Services",
-        options: [
-            "Room Cleaning",
-            "Laundry Service",
-            "Extra Towels",
-            "Room Supplies",
-            "Other Requests",
-        ],
-    },
-    travel: {
-        title: "🚗 Travel Assistance",
-        options: [
-            "Airport Pickup",
-            "Local Cab",
-            "Tour Guide",
-            "Car Rental",
-            "Other Travel Help",
-        ],
-    },
-    food: {
-        title: "🍽️ Food Menu",
-        dynamic: true,
-    }
-};
-
-function showSection(category) {
-    currentCategory = category;
-    currentService = "";
-
-    const section = services[category];
-    document.getElementById("mainMenu").classList.add("hidden");
-    document.getElementById("categorySection").classList.remove("hidden");
-    document.getElementById("categoryTitle").innerText = section.title;
-
-    const list = document.getElementById("optionsList");
-    list.innerHTML = "";
-
-    // Dynamic Food Menu
-    if (section.dynamic) {
-        const menuData = JSON.parse(localStorage.getItem("foodMenu") || "{}");
-
-        Object.keys(menuData).forEach((cat) => {
-            const header = document.createElement("h3");
-            header.className = "text-lg font-bold text-gray-700 mt-6";
-            header.innerText = cat;
-
-            list.appendChild(header);
-
-            menuData[cat].forEach((item) => {
-                const row = document.createElement("div");
-                row.className =
-                    "flex items-center justify-between bg-gray-100 p-4 rounded-lg";
-
-                row.innerHTML = `
-                    <div>
-                        <div class="font-semibold">${item.name}</div>
-                        <div class="text-sm text-gray-600">₹${item.price}</div>
-                    </div>
-                    <button class="bg-green-600 text-white px-3 py-1 rounded add-cart">
-                        Add to Cart
-                    </button>
-                `;
-
-                row.querySelector(".add-cart").onclick = () =>
-                    addToCart(item.name, Number(item.price));
-
-                list.appendChild(row);
-            });
-        });
-
-        return;
-    }
-
-    // Non-food categories
-    section.options.forEach((opt) => {
-        const btn = document.createElement("button");
-        btn.className =
-            "bg-gray-100 hover:bg-blue-100 font-semibold py-3 rounded-lg";
-        btn.innerText = opt;
-
-        btn.onclick = () => {
-            currentService = opt;
-            document
-                .querySelectorAll("#optionsList button")
-                .forEach((b) => b.classList.remove("bg-blue-200"));
-            btn.classList.add("bg-blue-200");
+  // Ensure minimal test data exists so menu never empty
+  (function ensureSampleMenu() {
+    try {
+      const existing = localStorage.getItem('foodMenu');
+      if (!existing) {
+        const sample = {
+          "Breakfast": [{name:"Idli", price:"60"}, {name:"Dosa", price:"80"}],
+          "Lunch": [{name:"Veg Thali", price:"150"}],
+          "Snacks": [{name:"French Fries", price:"120"}]
         };
+        localStorage.setItem('foodMenu', JSON.stringify(sample));
+      }
+    } catch (err) {
+      console.error('Unable to seed foodMenu:', err);
+    }
+  })();
 
-        list.appendChild(btn);
+  // Initialization after DOM
+  document.addEventListener('DOMContentLoaded', () => {
+    // Elements
+    const guestFormSection = $('guestFormSection');
+    const guestRoomInput = $('guestRoomInput');
+    const guestContinueBtn = $('guestContinueBtn');
+    const mainPortal = $('mainPortal');
+    const welcomeText = $('welcomeText');
+    const mainMenu = $('mainMenu');
+    const categorySection = $('categorySection');
+    const optionsList = $('optionsList');
+    const requestForm = $('requestForm');
+
+    const cartPanel = $('cartPanel');
+    const cartOverlay = $('cartOverlay');
+    const cartItemsEl = $('cartItems');
+    const cartSubtotalEl = $('cartSubtotal');
+    const closeCartBtn = $('closeCartBtn');
+    const placeOrderBtn = $('placeOrderBtn');
+    const clearCartBtn = $('clearCartBtn');
+
+    // Floating cart button
+    const floatBtn = document.createElement('button');
+    floatBtn.innerText = '🛒 Cart';
+    floatBtn.className = 'fixed bottom-6 right-6 bg-blue-600 text-white px-4 py-3 rounded-full shadow-lg';
+    floatBtn.onclick = openCart;
+    document.body.appendChild(floatBtn);
+
+    // Auto show if room saved
+    const savedRoom = localStorage.getItem('guestRoom');
+    if (savedRoom) {
+      guestFormSection.classList.add('hidden');
+      mainPortal.classList.remove('hidden');
+      mainMenu.classList.remove('hidden');
+      categorySection.classList.add('hidden');
+      welcomeText.innerText = `Welcome, Guest (Room ${savedRoom})`;
+    }
+
+    // Continue button
+    guestContinueBtn.addEventListener('click', () => {
+      const room = guestRoomInput.value && guestRoomInput.value.trim();
+      if (!room) return alert('Please enter room number');
+      localStorage.setItem('guestRoom', room);
+      localStorage.setItem('guestName', 'Guest');
+      guestFormSection.classList.add('hidden');
+      mainPortal.classList.remove('hidden');
+      welcomeText.innerText = `Welcome, Guest (Room ${room})`;
     });
-}
 
-function goBack() {
-    document.getElementById("mainMenu").classList.remove("hidden");
-    document.getElementById("categorySection").classList.add("hidden");
-}
+    // SERVICES
+    let currentCategory = '';
+    let currentService = '';
 
-/* =====================================================
-   NON-FOOD REQUEST SUBMISSION
-===================================================== */
-document.getElementById("requestForm").onsubmit = function (e) {
-    e.preventDefault();
-
-    const name = localStorage.getItem("guestName"); // always "Guest"
-    const room = localStorage.getItem("guestRoom");
-    const details = document.getElementById("requestDetails").value.trim();
-
-    const request = {
-        type: currentCategory,
-        service: currentService || "General Request",
-        name,
-        room,
-        details,
-        status: "Pending",
-        assigned_to: "",
-        time: new Date().toLocaleString(),
+    const services = {
+      housekeeping: { title: '🧹 Housekeeping Services', options: ['Room Cleaning','Laundry Service','Extra Towels','Room Supplies','Other Requests'] },
+      travel: { title: '🚗 Travel Assistance', options: ['Airport Pickup','Local Cab','Tour Guide','Car Rental','Other Travel Help'] },
+      food: { title: '🍽️ Food Menu', dynamic: true }
     };
 
-    const all = JSON.parse(localStorage.getItem("requests") || "[]");
-    all.push(request);
-    localStorage.setItem("requests", JSON.stringify(all));
+    // Show section
+    window.showSection = function(category) {
+      currentCategory = category;
+      currentService = '';
+      const section = services[category];
+      if (!section) return console.error('Unknown section', category);
 
-    alert("Request submitted successfully!");
+      mainMenu.classList.add('hidden');
+      categorySection.classList.remove('hidden');
+      $('categoryTitle').innerText = section.title;
+      optionsList.innerHTML = '';
 
-    this.reset();
-    goBack();
-};
-
-/* =====================================================
-   CART SYSTEM (unchanged)
-===================================================== */
-
-function getCart() { return JSON.parse(localStorage.getItem("cart") || "[]"); }
-function setCart(c) { localStorage.setItem("cart", JSON.stringify(c)); }
-
-const cartPanel = document.getElementById("cartPanel");
-const cartOverlay = document.getElementById("cartOverlay");
-const cartItemsEl = document.getElementById("cartItems");
-const cartSubtotalEl = document.getElementById("cartSubtotal");
-
-function renderCart() {
-    const cart = getCart();
-    cartItemsEl.innerHTML = "";
-
-    if (!cart.length) {
-        cartItemsEl.innerHTML = "<p class='text-gray-600'>Cart is empty.</p>";
-        cartSubtotalEl.innerText = "₹0";
+      if (section.dynamic) {
+        let menu = {};
+        try { menu = JSON.parse(localStorage.getItem('foodMenu') || '{}'); } catch(e){ menu = {}; console.error(e); }
+        if (!Object.keys(menu).length) {
+          optionsList.innerHTML = '<p class="text-gray-600">No food items available.</p>';
+          return;
+        }
+        Object.keys(menu).forEach(cat => {
+          const h = document.createElement('h3'); h.className='text-lg font-bold text-gray-700 mt-6'; h.innerText = cat;
+          optionsList.appendChild(h);
+          (menu[cat]||[]).forEach(item=>{
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between bg-gray-100 p-4 rounded-lg';
+            row.innerHTML = `
+              <div>
+                <div class="font-semibold">${item.name}</div>
+                <div class="text-sm text-gray-600">₹${item.price}</div>
+              </div>
+              <button class="bg-green-600 text-white px-3 py-1 rounded add-cart">Add to Cart</button>
+            `;
+            row.querySelector('.add-cart').addEventListener('click', (e)=> { e.stopPropagation(); addToCart(item.name, Number(item.price)); });
+            optionsList.appendChild(row);
+          });
+        });
         return;
-    }
+      }
 
-    let subtotal = 0;
-
-    cart.forEach((it, idx) => {
-        subtotal += it.price * it.qty;
-
-        const div = document.createElement("div");
-        div.className = "flex justify-between bg-gray-100 p-3 rounded";
-
-        div.innerHTML = `
-            <div>
-                <div class="font-semibold">${it.name}</div>
-                <div class="text-sm text-md text-gray-600">₹${it.price} × ${it.qty}</div>
-            </div>
-
-            <div class="flex items-center gap-2">
-                <button class="px-2 bg-gray-200 dec" data-idx="${idx}">-</button>
-                <div>${it.qty}</div>
-                <button class="px-2 bg-gray-200 inc" data-idx="${idx}">+</button>
-                <button class="text-red-600 del" data-idx="${idx}">Remove</button>
-            </div>
-        `;
-
-        cartItemsEl.appendChild(div);
-    });
-
-    cartSubtotalEl.innerText = "₹" + subtotal;
-}
-
-function openCart() {
-    cartOverlay.classList.remove("hidden");
-    cartPanel.style.transform = "translateX(0)";
-    renderCart();
-}
-
-function closeCart() {
-    cartOverlay.classList.add("hidden");
-    cartPanel.style.transform = "translateX(100%)";
-}
-
-document.getElementById("closeCartBtn").onclick = closeCart;
-cartOverlay.onclick = closeCart;
-
-// Floating Cart Button
-const floatBtn = document.createElement("button");
-floatBtn.innerText = "🛒 Cart";
-floatBtn.className =
-    "fixed bottom-6 right-6 bg-blue-600 text-white px-4 py-3 rounded-full shadow-lg";
-floatBtn.onclick = openCart;
-document.body.appendChild(floatBtn);
-
-function addToCart(name, price) {
-    const cart = getCart();
-    const found = cart.find((c) => c.name === name);
-
-    if (found) found.qty++;
-    else cart.push({ name, price, qty: 1 });
-
-    setCart(cart);
-    openCart();
-}
-
-cartItemsEl.addEventListener("click", (e) => {
-    const cart = getCart();
-
-    if (e.target.classList.contains("inc")) {
-        const idx = e.target.dataset.idx;
-        cart[idx].qty++;
-    }
-    if (e.target.classList.contains("dec")) {
-        const idx = e.target.dataset.idx;
-        cart[idx].qty = Math.max(1, cart[idx].qty - 1);
-    }
-    if (e.target.classList.contains("del")) {
-        const idx = e.target.dataset.idx;
-        cart.splice(idx, 1);
-    }
-
-    setCart(cart);
-    renderCart();
-});
-
-document.getElementById("clearCartBtn").onclick = () => {
-    setCart([]);
-    renderCart();
-};
-
-document.getElementById("placeOrderBtn").onclick = () => {
-    const cart = getCart();
-    if (!cart.length) return alert("Cart is empty.");
-
-    const name = "Guest"; 
-    const room = localStorage.getItem("guestRoom");
-
-    const details = cart
-        .map((i) => `${i.name} ×${i.qty} (₹${i.price})`)
-        .join("; ");
-
-    const total = cart.reduce((s, i) => s + i.qty * i.price, 0);
-
-    const request = {
-        type: "Food",
-        service: "Food Order",
-        name,
-        room,
-        details: `${details} — Total: ₹${total}`,
-        status: "Pending",
-        assigned_to: "",
-        time: new Date().toLocaleString(),
+      // non-food
+      section.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'bg-gray-100 hover:bg-blue-100 font-semibold py-3 rounded-lg';
+        btn.innerText = opt;
+        btn.addEventListener('click', () => {
+          currentService = opt;
+          document.querySelectorAll('#optionsList button').forEach(b=>b.classList.remove('bg-blue-200'));
+          btn.classList.add('bg-blue-200');
+        });
+        optionsList.appendChild(btn);
+      });
     };
 
-    const all = JSON.parse(localStorage.getItem("requests") || "[]");
-    all.push(request);
-    localStorage.setItem("requests", JSON.stringify(all));
+    window.goBack = function(){
+      mainMenu.classList.remove('hidden');
+      categorySection.classList.add('hidden');
+    };
 
-    alert("Food order placed successfully!");
+    // Request form (non-food)
+    if (requestForm) {
+      requestForm.addEventListener('submit', (e)=>{
+        e.preventDefault();
+        const name = localStorage.getItem('guestName') || 'Guest';
+        const room = localStorage.getItem('guestRoom') || '';
+        const details = $('requestDetails') ? $('requestDetails').value.trim() : '';
+        const request = { type: currentCategory, service: currentService || 'General Request', name, room, details, status:'Pending', assigned_to:'', time: new Date().toLocaleString() };
+        const all = JSON.parse(localStorage.getItem('requests')||'[]'); all.push(request); localStorage.setItem('requests', JSON.stringify(all));
+        alert('Request submitted successfully!');
+        requestForm.reset();
+        goBack();
+      });
+    }
 
-    setCart([]);
+    // CART logic (safe)
+    function getCart(){ try { return JSON.parse(localStorage.getItem('cart')||'[]'); } catch(e){ return []; } }
+    function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
+
+    function renderCart(){
+      const cart = getCart();
+      cartItemsEl.innerHTML = '';
+      if (!cart.length){ cartItemsEl.innerHTML = '<p class="text-gray-600">Cart is empty.</p>'; cartSubtotalEl.innerText = '₹0'; return; }
+      let subtotal = 0;
+      cart.forEach((it, idx)=>{
+        subtotal += it.price * it.qty;
+        const div = document.createElement('div'); div.className='flex justify-between bg-gray-100 p-3 rounded';
+        div.innerHTML = `
+          <div>
+            <div class="font-semibold">${it.name}</div>
+            <div class="text-sm text-gray-600">₹${it.price} × ${it.qty}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="px-2 bg-gray-200 dec" data-idx="${idx}">-</button>
+            <div>${it.qty}</div>
+            <button class="px-2 bg-gray-200 inc" data-idx="${idx}">+</button>
+            <button class="text-red-600 del" data-idx="${idx}">Remove</button>
+          </div>
+        `;
+        cartItemsEl.appendChild(div);
+      });
+      cartSubtotalEl.innerText = '₹' + subtotal;
+    }
+
+    function openCart(){ cartOverlay.classList.remove('hidden'); cartPanel.style.transform = 'translateX(0)'; renderCart(); }
+    function closeCart(){ cartOverlay.classList.add('hidden'); cartPanel.style.transform = 'translateX(100%)'; }
+
+    closeCartBtn.addEventListener('click', closeCart);
+    cartOverlay.addEventListener('click', closeCart);
+    clearCartBtn.addEventListener('click', ()=>{ if(confirm('Clear cart?')){ setCart([]); renderCart(); } });
+
+    cartItemsEl.addEventListener('click', (e)=>{
+      const target = e.target;
+      if (target.classList.contains('inc') || target.classList.contains('dec') || target.classList.contains('del')){
+        const idx = Number(target.dataset.idx);
+        const cart = getCart();
+        if (!cart[idx]) return;
+        if (target.classList.contains('inc')) cart[idx].qty++;
+        if (target.classList.contains('dec')) cart[idx].qty = Math.max(1, cart[idx].qty-1);
+        if (target.classList.contains('del')) cart.splice(idx,1);
+        setCart(cart); renderCart();
+      }
+    });
+
+    // add to cart
+    window.addToCart = function(name, price){
+      const cart = getCart();
+      const found = cart.find(c => c.name === name && c.price === price);
+      if (found) found.qty++;
+      else cart.push({name, price, qty:1});
+      setCart(cart);
+      openCart();
+    };
+
+    // place order -> create admin request
+    placeOrderBtn.addEventListener('click', ()=>{
+      const cart = getCart(); if (!cart.length) return alert('Cart is empty.');
+      const name = 'Guest'; const room = localStorage.getItem('guestRoom') || '';
+      const details = cart.map(i=>`${i.name} ×${i.qty} (₹${i.price})`).join('; ');
+      const total = cart.reduce((s,i)=>s+i.qty*i.price,0);
+      const request = { type:'Food', service:'Food Order', name, room, details: details + ` — Total: ₹${total}`, status:'Pending', assigned_to:'', time:new Date().toLocaleString() };
+      const all = JSON.parse(localStorage.getItem('requests')||'[]'); all.push(request); localStorage.setItem('requests', JSON.stringify(all));
+      alert('Food order placed successfully!');
+      setCart([]); renderCart(); closeCart();
+    });
+
+    // initialize cart view
     renderCart();
-    closeCart();
-};
 
-renderCart();
-</script>
+    // expose openCart globally for testing
+    window.openCart = openCart;
 
+  }); // DOMContentLoaded end
+  </script>
 </body>
 </html>
