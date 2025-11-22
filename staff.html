@@ -2,21 +2,18 @@
 <html>
 <head>
 <meta charset="utf-8"/>
-<title>Staff Dashboard - Hotel Portal</title>
+<title>Staff Dashboard</title>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 
-<!-- Tailwind -->
+<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
 <style>
+  .tab { padding:8px 14px; background:#e5e7eb; border-radius:6px; cursor:pointer; }
   .tab-active { background:#2563eb; color:white; }
-  .tab { padding:8px 14px; border-radius:6px; cursor:pointer; background:#e5e7eb; }
   .card { background:white; padding:14px; border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,0.08); margin-bottom:12px; }
-  .status { font-size:13px; font-weight:600; padding:4px 6px; border-radius:6px; color:white; }
+  .status { padding:4px 7px; border-radius:6px; font-size:12px; color:white; font-weight:600; }
+  .Assigned { background:#2563eb; }
   .Pending { background:#6b7280; }
   .InProgress { background:#f59e0b; }
   .Completed { background:#16a34a; }
@@ -37,7 +34,7 @@
   </div>
 
   <p class="text-sm text-gray-600 mb-3">
-    View & complete your assigned tasks. Tap any card to view full order summary.
+    Tasks assigned to you will appear here. Click any task to view full details.
   </p>
 
   <!-- Tabs -->
@@ -48,166 +45,172 @@
     <div class="tab" data-tab="history">History</div>
   </div>
 
-  <!-- Content -->
+  <!-- Task list -->
   <div id="taskList"></div>
 
 </div>
 
-<!-- Modal -->
-<div id="modalBg" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-  <div id="modalBox" class="bg-white p-5 rounded-xl max-w-md w-11/12 shadow-xl"></div>
+<!-- MODAL -->
+<div id="modalBg"
+     class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div id="modalBox" class="bg-white p-5 rounded-xl max-w-md w-11/12"></div>
 </div>
 
 <script>
-/* -----------------------------
-   FIREBASE INIT
------------------------------- */
-var firebaseConfig = {
-  apiKey: "AIzaSyDpSKRN8iYOosANJXLYnxvfILXYmtRgq5Q",
-  authDomain: "hotel-management-93d66.firebaseapp.com",
-  databaseURL: "https://hotel-management-93d66-default-rtdb.firebaseio.com",
-  projectId: "hotel-management-93d66",
-  storageBucket: "hotel-management-93d66.firebasestorage.app",
-  messagingSenderId: "937368960990",
-  appId: "1:937368960990:web:9e6425dfcc63f96844e74f"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-/* -----------------------------
-   STAFF AUTH
------------------------------- */
-const staffAuth = JSON.parse(localStorage.getItem('staffAuth') || "null");
-if(!staffAuth || !staffAuth.name){
+/* -------------------------------
+   STAFF LOGIN VALIDATION
+-------------------------------- */
+const staffAuth = JSON.parse(localStorage.getItem("staffAuth") || "null");
+if (!staffAuth || !staffAuth.name){
   alert("Please login as staff");
   location.href = "login.html";
 }
+
 document.getElementById("staffName").innerText = staffAuth.name;
 
-/* -----------------------------
+/* -------------------------------
+   LOAD TASKS
+-------------------------------- */
+function getRequests(){
+  return JSON.parse(localStorage.getItem("requests") || "[]");
+}
+
+/* -------------------------------
    TABS
------------------------------- */
+-------------------------------- */
 let activeTab = "pending";
 document.querySelectorAll(".tab").forEach(tab=>{
-  tab.addEventListener("click", ()=>{
+  tab.onclick = ()=>{
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("tab-active"));
     tab.classList.add("tab-active");
     activeTab = tab.dataset.tab;
     render();
-  });
+  };
 });
 
-/* -----------------------------
-   DATA FETCH (REALTIME)
------------------------------- */
-let requests = {};
-db.ref("requests").on("value", snap=>{
-  requests = snap.val() || {};
-  render();
-});
-
-/* -----------------------------
-   RENDER
------------------------------- */
+/* -------------------------------
+   RENDER TASKS
+-------------------------------- */
 function render(){
   const list = document.getElementById("taskList");
   list.innerHTML = "";
 
-  const arr = Object.keys(requests).map(id => ({ id, ...requests[id] }));
-  const mine = arr.filter(r => r.assigned_to === staffAuth.name);
+  const all = getRequests();
+
+  // Only tasks assigned to this staff
+  const mine = all.filter(r => r.assigned_to === staffAuth.name);
 
   let filtered = [];
 
   if(activeTab === "pending"){
-    filtered = mine.filter(r=>r.status === "Pending");
+    filtered = mine.filter(r => r.status === "Assigned" || r.status === "Pending");
   }
   if(activeTab === "inprogress"){
-    filtered = mine.filter(r=>r.status === "In Progress");
+    filtered = mine.filter(r => r.status === "In Progress");
   }
   if(activeTab === "completed"){
-    filtered = mine.filter(r=>r.status === "Completed");
+    filtered = mine.filter(r => r.status === "Completed");
   }
   if(activeTab === "history"){
-    filtered = mine; // Show all assigned tasks
+    filtered = mine; // show all assigned
   }
 
   if(filtered.length === 0){
-    list.innerHTML = `<p class="text-gray-600 text-sm">No tasks available.</p>`;
+    list.innerHTML = `<p class="text-gray-600 text-sm">No tasks found.</p>`;
     return;
   }
 
-  filtered.forEach(task => {
-    const div = document.createElement("div");
-    div.className = "card cursor-pointer";
-    div.innerHTML = `
+  filtered.forEach((task, idx)=>{
+    const card = document.createElement("div");
+    card.className = "card cursor-pointer";
+
+    card.innerHTML = `
       <div class="flex justify-between">
         <div>
           <div class="font-semibold">${task.service}</div>
           <div class="text-sm text-gray-600">Room ${task.room} — ${task.type}</div>
         </div>
-        <div class="status ${task.status.replace(' ','')}">${task.status}</div>
+        <div class="status ${task.status.replace(" ","")}">${task.status}</div>
       </div>
-      <div class="text-xs text-gray-500 mt-2">${new Date(task.created_at).toLocaleString()}</div>
 
-      ${
-        task.status !== "Completed"
-        ? `<div class="mt-3 flex gap-2">
-             <button class="px-3 py-1 bg-amber-500 text-white rounded startBtn" data-id="${task.id}">Start</button>
-             <button class="px-3 py-1 bg-green-600 text-white rounded completeBtn" data-id="${task.id}">Complete</button>
-           </div>`
-        : ""
-      }
+      <div class="text-xs text-gray-500 mt-2">${task.created_at}</div>
+
+      <div class="mt-3 flex gap-2">
+        ${
+          (task.status === "Assigned" || task.status === "Pending")
+          ? `<button class="px-3 py-1 bg-amber-500 text-white rounded startBtn" data-id="${task.id}">Start</button>`
+          : ""
+        }
+        ${
+          task.status === "In Progress"
+          ? `<button class="px-3 py-1 bg-green-600 text-white rounded completeBtn" data-id="${task.id}">Complete</button>`
+          : ""
+        }
+      </div>
     `;
 
-    // Open summary modal on click
-    div.onclick = (e)=>{
-      if(e.target.classList.contains("startBtn") || e.target.classList.contains("completeBtn")) return;
+    // Summary when clicking card
+    card.onclick = (e)=>{
+      if(e.target.classList.contains("startBtn") || e.target.classList.contains("completeBtn"))
+        return;
       openSummary(task);
     };
 
-    list.appendChild(div);
+    list.appendChild(card);
   });
 }
 
-/* -----------------------------
-   UPDATE STATUS
------------------------------- */
+/* -------------------------------
+   BUTTON ACTIONS
+-------------------------------- */
 document.addEventListener("click", e=>{
+  const all = getRequests();
+
+  // Start
   if(e.target.classList.contains("startBtn")){
     const id = e.target.dataset.id;
-    db.ref("requests/" + id).update({
-      status: "In Progress",
-      updated_at: new Date().toISOString()
-    });
+    const idx = all.findIndex(r => r.id == id);
+    if(idx > -1){
+      all[idx].status = "In Progress";
+      all[idx].updated_at = new Date().toLocaleString();
+      localStorage.setItem("requests", JSON.stringify(all));
+      render();
+    }
   }
+
+  // Complete
   if(e.target.classList.contains("completeBtn")){
     const id = e.target.dataset.id;
-    db.ref("requests/" + id).update({
-      status: "Completed",
-      updated_at: new Date().toISOString()
-    });
+    const idx = all.findIndex(r => r.id == id);
+    if(idx > -1){
+      all[idx].status = "Completed";
+      all[idx].updated_at = new Date().toLocaleString();
+      localStorage.setItem("requests", JSON.stringify(all));
+      render();
+    }
   }
 });
 
-/* -----------------------------
+/* -------------------------------
    SUMMARY MODAL
------------------------------- */
+-------------------------------- */
 function openSummary(task){
-  const html = `
-    <h3 class="text-xl font-semibold mb-2">Request Summary</h3>
+  const box = document.getElementById("modalBox");
+
+  box.innerHTML = `
+    <h3 class="text-xl font-semibold mb-2">Task Summary</h3>
+
     <p><strong>Service:</strong> ${task.service}</p>
     <p><strong>Category:</strong> ${task.type}</p>
     <p><strong>Room:</strong> ${task.room}</p>
-    <p><strong>Guest:</strong> ${task.name}</p>
-    <p><strong>Details:</strong> ${task.details}</p>
+    <p><strong>Request:</strong> ${task.details}</p>
     <p><strong>Status:</strong> ${task.status}</p>
-    <p class="text-xs text-gray-500 mt-2">${new Date(task.created_at).toLocaleString()}</p>
 
     <div class="text-right mt-4">
       <button onclick="closeModal()" class="px-4 py-1 bg-gray-300 rounded">Close</button>
     </div>
   `;
-  document.getElementById("modalBox").innerHTML = html;
+
   document.getElementById("modalBg").classList.remove("hidden");
 }
 
@@ -215,14 +218,15 @@ function closeModal(){
   document.getElementById("modalBg").classList.add("hidden");
 }
 
-/* -----------------------------
+/* -------------------------------
    LOGOUT
------------------------------- */
+-------------------------------- */
 document.getElementById("logout").onclick = ()=>{
   localStorage.removeItem("staffAuth");
   location.href = "login.html";
 };
-</script>
 
+render();
+</script>
 </body>
 </html>
