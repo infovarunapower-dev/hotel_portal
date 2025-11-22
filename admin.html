@@ -1,9 +1,8 @@
-
 <!doctype html>
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>Admin Dashboard - Hotel Portal</title>
+  <title>Admin Dashboard - Hotel Portal (Updated)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <style>
     :root{
@@ -18,7 +17,7 @@
     header .title{font-size:18px;font-weight:700}
     .layout{display:flex;min-height:calc(100vh - 56px)}
     .sidebar{
-      width:260px;background:var(--sidebar);padding:18px;
+      width:300px;background:var(--sidebar);padding:18px;
       box-shadow: 6px 0 20px rgba(0,0,0,0.06);
       border-right:1px solid #eef2f7;
     }
@@ -63,6 +62,11 @@
     .modal h3{margin-top:0}
     .form-row{margin-bottom:10px}
     .small-muted{font-size:13px;color:#555}
+    .cards{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+    .card{background:white;padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.05);min-width:140px;flex:1}
+    .perf-list{background:#fff;padding:10px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.04);margin-top:10px}
+    .summary-small{font-size:12px;color:var(--muted)}
+    .summary-num{font-size:20px;font-weight:700}
   </style>
 </head>
 
@@ -104,6 +108,7 @@
           <div class="tab" data-cat="Housekeeping">🧹 Housekeeping</div>
           <div class="tab" data-cat="Travel">🚗 Travel</div>
           <div class="tab" data-cat="Food">🍽️ Food</div>
+          <div class="tab" data-cat="Completed">✅ Completed</div>
         </div>
 
         <input type="text" id="searchInput" placeholder="Search..." style="flex:1"/>
@@ -121,18 +126,33 @@
           <option value="">All Staff</option>
         </select>
 
+        <select id="categoryFilter">
+          <option value="">All Categories</option>
+          <option value="Housekeeping">Housekeeping</option>
+          <option value="Travel">Travel</option>
+          <option value="Food">Food</option>
+        </select>
+
         <button class="btn ignore" id="clearIgnoredBtn">Clear Ignored</button>
       </div>
+
+      <!-- Dashboard cards -->
+      <div class="cards" id="dashboardCards" aria-live="polite"></div>
 
       <table id="reqTable">
         <thead>
           <tr>
-            <th>#</th><th>Category</th><th>Service</th><th>Guest</th>
-            <th>Room</th><th>Time</th><th>Status</th><th>Action</th>
+            <th>#</th><th>Category</th><th>Service / Summary</th><th>Guest</th>
+            <th>Room</th><th>Time</th><th>Status</th><th>Staff</th><th>Action</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
+
+      <div class="perf-list" id="perfList">
+        <h4 style="margin:6px 0 8px">Staff Performance</h4>
+        <div id="perfRows"></div>
+      </div>
 
     </main>
   </div>
@@ -142,24 +162,45 @@
   </div>
 
 <script>
-/* STORAGE HELPERS */
+/* =========================
+   STORAGE HELPERS & MIGRATION
+   ========================= */
 function getRequests(){ return JSON.parse(localStorage.getItem('requests') || '[]'); }
 function setRequests(a){ localStorage.setItem('requests', JSON.stringify(a)); }
 
 function getStaff(){
-  if(!localStorage.getItem('staffList'))
-      localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
-  return JSON.parse(localStorage.getItem('staffList'));
+  let raw = localStorage.getItem('staffList');
+  if(!raw){
+    const defaults = [
+      {name:'Raj',category:'Housekeeping'},
+      {name:'Kumar',category:'Housekeeping'},
+      {name:'Sita',category:'Housekeeping'}
+    ];
+    localStorage.setItem('staffList', JSON.stringify(defaults));
+    return defaults;
+  }
+  try{
+    const parsed = JSON.parse(raw);
+    if(parsed.length && typeof parsed[0]==="string"){
+      const migrated = parsed.map(s=>({name:s,category:'Housekeeping'}));
+      localStorage.setItem('staffList', JSON.stringify(migrated));
+      return migrated;
+    }
+    return parsed.map(s=>({name:s.name,category:s.category||'Housekeeping'}));
+  }catch(e){
+    return [];
+  }
 }
 function setStaff(a){ localStorage.setItem('staffList', JSON.stringify(a)); }
 
 function getFood(){ return JSON.parse(localStorage.getItem('foodMenu') || '{}'); }
-function setFood(obj){ localStorage.setItem('foodMenu', JSON.stringify(obj)); }
+function setFood(o){ localStorage.setItem('foodMenu', JSON.stringify(o)); }
 
-/* MODAL */
+/* =========================
+   MODAL
+   ========================= */
 const modalBackdrop=document.getElementById("modalBackdrop");
 const modalContent=document.getElementById("modalContent");
-
 function openModal(html){
   modalContent.innerHTML=html;
   modalBackdrop.style.display="flex";
@@ -168,24 +209,76 @@ function closeModal(){
   modalBackdrop.style.display="none";
   modalContent.innerHTML="";
 }
-modalBackdrop.addEventListener("click",e=>{
-  if(e.target===modalBackdrop) closeModal();
-});
+modalBackdrop.addEventListener("click",e=>{ if(e.target===modalBackdrop) closeModal(); });
 
-/* TABLE */
+/* =========================
+   STATUS TAG
+   ========================= */
 function statusTag(s){
   return `<span class="status-tag status-${s.replace(/ /g,'-')}">${s}</span>`;
 }
 
 function updateStats(){
-  let all=getRequests();
-  let total=all.length;
-  let assigned=all.filter(r=>r.status==="Assigned").length;
-  let ignored=all.filter(r=>r.status==="Ignored").length;
-  document.getElementById("statsArea").innerText=
-    `Requests: ${total} · Assigned: ${assigned} · Ignored: ${ignored}`;
+  const all=getRequests();
+  const assigned=all.filter(r=>r.status==="Assigned").length;
+  const ignored=all.filter(r=>r.status==="Ignored").length;
+  document.getElementById("statsArea").innerText =
+    `Requests: ${all.length} · Assigned: ${assigned} · Ignored: ${ignored}`;
 }
 
+/* =========================
+   DASHBOARD CARDS
+   ========================= */
+function renderDashboardCards(){
+  const all=getRequests();
+  const pending=all.filter(r=>r.status==="Pending").length;
+  const inprog=all.filter(r=>r.status==="In Progress").length;
+  const comp=all.filter(r=>r.status==="Completed").length;
+  const ign=all.filter(r=>r.status==="Ignored").length;
+
+  document.getElementById("dashboardCards").innerHTML = `
+    <div class="card"><div class="summary-small">Total</div><div class="summary-num">${all.length}</div></div>
+    <div class="card"><div class="summary-small">Pending</div><div class="summary-num">${pending}</div></div>
+    <div class="card"><div class="summary-small">In Progress</div><div class="summary-num">${inprog}</div></div>
+    <div class="card"><div class="summary-small">Completed</div><div class="summary-num">${comp}</div></div>
+    <div class="card"><div class="summary-small">Ignored</div><div class="summary-num">${ign}</div></div>
+  `;
+}
+
+/* =========================
+   STAFF PERFORMANCE
+   ========================= */
+function renderPerf(){
+  const all=getRequests();
+  const staff=getStaff();
+  const perf = staff.map(s=>{
+    const handled = all.filter(r=>r.assigned_to===s.name).length;
+    const completed = all.filter(r=>r.assigned_to===s.name && r.status==='Completed').length;
+    return {
+      name:s.name,
+      category:s.category,
+      handled,
+      completed,
+      rate: handled ? Math.round(completed/handled*100) : 0
+    };
+  });
+  
+  document.getElementById("perfRows").innerHTML =
+    perf.map(p=>`
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee">
+        <div><b>${p.name}</b><br><span class="small-muted">${p.category}</span></div>
+        <div style="text-align:right">
+          <div class="small-muted">Handled: ${p.handled}</div>
+          <div class="small-muted">Completed: ${p.completed}</div>
+          <div class="small-muted">Done: ${p.rate}%</div>
+        </div>
+      </div>
+    `).join('');
+}
+
+/* =========================
+   MAIN TABLE RENDER
+   ========================= */
 function render(){
   let all=getRequests();
   let body=document.querySelector("#reqTable tbody");
@@ -195,82 +288,93 @@ function render(){
   let search=document.getElementById("searchInput").value.toLowerCase();
   let statusFilter=document.getElementById("filterStatus").value;
   let staffFilter=document.getElementById("staffFilter").value;
+  let categoryFilter=document.getElementById("categoryFilter").value;
 
-  let filtered=all.filter(r=>{
-    if(tab!=="all" && r.type!==tab) return false;
+  let filtered = all.filter(r=>{
+    if(tab==="Completed" && r.status!=="Completed") return false;
+    if(tab!=="all" && tab!=="Completed" && r.type!==tab) return false;
     if(statusFilter && r.status!==statusFilter) return false;
-    if(staffFilter && (r.assigned_to||"")!==staffFilter) return false;
-    if(search && !(
-      (r.name||"").toLowerCase().includes(search) ||
-      (r.room||"").toString().includes(search) ||
-      (r.service||"").toLowerCase().includes(search)
-    )) return false;
+    if(staffFilter && r.assigned_to!==staffFilter) return false;
+    if(categoryFilter && r.type!==categoryFilter) return false;
+    if(search && !JSON.stringify(r).toLowerCase().includes(search)) return false;
     return true;
   });
 
   filtered.slice().reverse().forEach((r,i)=>{
-    let idx=all.length-1-i;
-    let tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td>${idx+1}</td>
-      <td>${r.type}</td>
-      <td>${r.service}</td>
-      <td>${r.name||'-'}</td>
-      <td>${r.room||'-'}</td>
-      <td>${r.time||''}</td>
-      <td>${statusTag(r.status)}</td>
-      <td>
-        <select class="select-staff" data-idx="${idx}">
-          <option value="">Assign staff</option>
-          ${getStaff().map(s=>`<option value="${s}" ${r.assigned_to===s?'selected':''}>${s}</option>`)}
-        </select>
+    let idx = all.length-1-i;
+    const summary = `${r.service} — ${(r.details||'').slice(0,60)}`;
 
-        <button class="btn assign" data-assign="${idx}">Assign</button>
-        <button class="btn inprogress" data-inprogress="${idx}">Start</button>
-        <button class="btn complete" data-complete="${idx}">Complete</button>
-        <button class="btn ignore" data-ignore="${idx}">Ignore</button>
-      </td>`;
-    body.appendChild(tr);
+    let staffList = getStaff().filter(s=>s.category===r.type);
+
+    body.innerHTML += `
+      <tr>
+        <td>${idx+1}</td>
+        <td>${r.type}</td>
+        <td><b>${summary}</b></td>
+        <td>${r.name||'-'}</td>
+        <td>${r.room||'-'}</td>
+        <td>${r.time||''}</td>
+        <td>${statusTag(r.status)}</td>
+        <td>${r.assigned_to||'-'}</td>
+        <td>
+          <select class="select-staff" data-idx="${idx}">
+            <option value="">Assign staff</option>
+            ${staffList.map(s=>`
+              <option value="${s.name}" ${s.name===r.assigned_to?'selected':''}>${s.name}</option>
+            `).join('')}
+          </select>
+
+          <button class="btn assign" data-assign="${idx}">Assign</button>
+          <button class="btn inprogress" data-inprogress="${idx}">Start</button>
+          <button class="btn complete" data-complete="${idx}">Complete</button>
+          <button class="btn ignore" data-ignore="${idx}">Ignore</button>
+        </td>
+      </tr>
+    `;
   });
 
   updateStats();
+  renderDashboardCards();
+  renderPerf();
 }
 
-/* ACTIONS */
+/* =========================
+   ACTION BUTTONS
+   ========================= */
 document.addEventListener("click",e=>{
-  let el=e.target;
+  let all=getRequests();
 
-  if(el.dataset.assign){
-    let idx=+el.dataset.assign;
-    let staff=document.querySelector(`.select-staff[data-idx="${idx}"]`).value;
-    if(!staff)return alert("Select staff");
-    let all=getRequests();
+  if(e.target.dataset.assign){
+    const idx = +e.target.dataset.assign;
+    const s = document.querySelector(`.select-staff[data-idx="${idx}"]`).value;
+    if(!s) return alert("Select valid staff");
+    all[idx].assigned_to=s;
     all[idx].status="Assigned";
-    all[idx].assigned_to=staff;
-    setRequests(all);render();
+    setRequests(all); render();
   }
-  if(el.dataset.inprogress){
-    let idx=+el.dataset.inprogress;
-    let all=getRequests();
+
+  if(e.target.dataset.inprogress){
+    const idx = +e.target.dataset.inprogress;
     all[idx].status="In Progress";
-    setRequests(all);render();
+    setRequests(all); render();
   }
-  if(el.dataset.complete){
-    let idx=+el.dataset.complete;
-    let all=getRequests();
+
+  if(e.target.dataset.complete){
+    const idx = +e.target.dataset.complete;
     all[idx].status="Completed";
-    setRequests(all);render();
+    setRequests(all); render();
   }
-  if(el.dataset.ignore){
-    let idx=+el.dataset.ignore;
-    if(!confirm("Ignore this?"))return;
-    let all=getRequests();
+
+  if(e.target.dataset.ignore){
+    const idx = +e.target.dataset.ignore;
     all[idx].status="Ignored";
-    setRequests(all);render();
+    setRequests(all); render();
   }
 });
 
-/* Filters */
+/* =========================
+   FILTERS + TABS
+   ========================= */
 document.getElementById("tabs").onclick=e=>{
   if(e.target.classList.contains("tab")){
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
@@ -278,100 +382,129 @@ document.getElementById("tabs").onclick=e=>{
     render();
   }
 };
+
 document.getElementById("searchInput").oninput=render;
 document.getElementById("filterStatus").onchange=render;
 document.getElementById("staffFilter").onchange=render;
+document.getElementById("categoryFilter").onchange=render;
 
-/* Sidebar */
-document.querySelectorAll(".sb-item").forEach(item=>{
-  item.onclick=()=>{
-    document.querySelectorAll(".sb-item").forEach(i=>i.classList.remove("active"));
-    item.classList.add("active");
-
-    let a=item.dataset.action;
-    if(a==="dashboard"){document.querySelector('.tab[data-cat="all"]').click();}
-    else if(a==="assignments"){document.querySelector('.tab[data-cat="all"]').click();}
-    else if(a==="add-staff"){openAddStaff();}
-    else if(a==="add-food"){openAddFood();}
-    else if(a==="settings"){openSettings();}
-  };
-});
-
-/* Add Staff */
+/* =========================
+   ADD STAFF MODAL
+   ========================= */
 function openAddStaff(){
   openModal(`
-    <h3>Add New Staff</h3>
+    <h3>Add Staff</h3>
     <input id="newStaffName" placeholder="Name" class="form-row"/>
-    <button onclick="closeModal()" class="btn">Cancel</button>
+    <select id="newStaffCategory" class="form-row">
+      <option>Housekeeping</option>
+      <option>Travel</option>
+      <option>Food</option>
+    </select>
+
     <button onclick="addStaff()" class="btn assign">Add</button>
+    <button onclick="closeModal()" class="btn">Cancel</button>
   `);
 }
+
 function addStaff(){
-  let n=document.getElementById("newStaffName").value.trim();
-  if(!n)return alert("Enter name");
+  const name=document.getElementById("newStaffName").value.trim();
+  const cat=document.getElementById("newStaffCategory").value;
+
+  if(!name) return alert("Enter name");
+
   let staff=getStaff();
-  if(staff.includes(n))return alert("Staff exists");
-  staff.push(n);
+  if(staff.some(s=>s.name===name)) return alert("Already exists");
+
+  staff.push({name:name,category:cat});
   setStaff(staff);
   populateStaffFilter();
   closeModal();
 }
 
-/* Add Food */
+/* =========================
+   ADD FOOD MODAL
+   ========================= */
 function openAddFood(){
-  let cats=Object.keys(getFood());
   openModal(`
     <h3>Add Food Item</h3>
-    <input id="foodCategory" placeholder="Category" value="${cats[0]||''}" class="form-row"/>
-    <input id="foodName" placeholder="Item" class="form-row"/>
-    <input id="foodPrice" type="number" placeholder="Price" class="form-row"/>
-    <button onclick="closeModal()" class="btn">Cancel</button>
+    <input id="foodCategory" placeholder="Category" class="form-row"/>
+    <input id="foodName" placeholder="Item name" class="form-row"/>
+    <input id="foodPrice" placeholder="Price" class="form-row"/>
+
     <button onclick="addFoodItem()" class="btn assign">Add</button>
+    <button onclick="closeModal()" class="btn">Cancel</button>
   `);
 }
+
 function addFoodItem(){
-  let cat=document.getElementById("foodCategory").value.trim();
-  let n=document.getElementById("foodName").value.trim();
-  let p=document.getElementById("foodPrice").value.trim();
-  if(!cat||!n||!p)return alert("Fill details");
+  let cat=document.getElementById("foodCategory").value;
+  let n=document.getElementById("foodName").value;
+  let p=document.getElementById("foodPrice").value;
+
+  if(!cat||!n||!p) return alert("Fill all fields");
+
   let menu=getFood();
-  if(!menu[cat])menu[cat]=[];
+  if(!menu[cat]) menu[cat]=[];
   menu[cat].push({name:n,price:p});
+
   setFood(menu);
   closeModal();
 }
 
-/* Settings */
+/* =========================
+   SETTINGS
+   ========================= */
 function openSettings(){
   openModal(`
     <h3>Settings</h3>
-    <input id="setPin" placeholder="PIN (4 digits)" class="form-row"/>
-    <input id="setStaff" value="${getStaff().join(',')}" class="form-row"/>
-    <button onclick="closeModal()" class="btn">Cancel</button>
+    <input id="setPin" placeholder="Set new PIN" class="form-row"/>
+    <p class="small-muted">Staff list: name:category,name2:category2</p>
+    <input id="setStaff" value="${getStaff().map(s=>s.name+':'+s.category).join(',')}" class="form-row"/>
+
     <button onclick="saveSettings()" class="btn assign">Save</button>
+    <button onclick="closeModal()" class="btn">Cancel</button>
   `);
 }
+
 function saveSettings(){
-  let s=document.getElementById("setStaff").value.trim();
-  setStaff(s.split(',').map(x=>x.trim()));
-  populateStaffFilter();
+  const str=document.getElementById("setStaff").value;
+  if(str){
+    const arr=str.split(',').map(i=>{
+      const [name,cat]=i.split(':');
+      return {name:name.trim(),category:cat.trim()};
+    });
+    setStaff(arr);
+    populateStaffFilter();
+  }
   closeModal();
 }
 
-/* Logout */
+/* =========================
+   LOGOUT
+   ========================= */
 document.getElementById("logoutBtn").onclick=()=>{localStorage.removeItem("adminAuth");location.href="login.html"};
 document.getElementById("logoutLink").onclick=()=>localStorage.removeItem("adminAuth");
 
-/* Init */
+/* STAFF FILTER FILL */
 function populateStaffFilter(){
   let s=getStaff();
   let el=document.getElementById("staffFilter");
-  el.innerHTML='<option value="">All Staff</option>'+s.map(x=>`<option>${x}</option>`).join('');
+  el.innerHTML = '<option value="">All Staff</option>' +
+    s.map(x=>`<option value="${x.name}">${x.name} — ${x.category}</option>`).join('');
 }
-
 populateStaffFilter();
-render();
 
+/* CLEAR IGNORED */
+document.getElementById("clearIgnoredBtn").onclick=()=>{
+  if(!confirm("Reset ignored items?")) return;
+  let a=getRequests();
+  a.forEach(r=>{if(r.status==='Ignored') r.status='Pending';});
+  setRequests(a); render();
+};
+
+/* INIT */
+render();
 </script>
+
 </body>
 </html>
