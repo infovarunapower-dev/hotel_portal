@@ -2,77 +2,102 @@
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>Login - Hotel Portal</title>
+  <title>Login - Hotel Portal (PIN)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <style>
     body{font-family:Arial;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f3f6fb}
-    .box{background:#fff;padding:24px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.08);width:320px}
+    .box{background:#fff;padding:22px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.08);width:360px}
     input,select,button{width:100%;padding:10px;margin:8px 0;border-radius:6px;border:1px solid #ddd;box-sizing:border-box}
     button{background:#2563eb;color:#fff;border:none;cursor:pointer}
-    .small{font-size:13px;color:#555}
+    .muted{font-size:13px;color:#666;margin-top:6px}
+    .small{font-size:13px;color:#444}
+    .link{color:#2563eb;cursor:pointer;text-decoration:underline}
   </style>
 </head>
 <body>
   <div class="box">
-    <h2 style="margin:0 0 6px">Login</h2>
-    <p class="small">Choose role then sign in</p>
+    <h2 style="margin:0 0 6px">Sign In</h2>
+    <p class="muted">Choose role and sign in. Admin uses PIN.</p>
 
-    <label>Role</label>
+    <label class="small">Role</label>
     <select id="role">
       <option value="admin">Admin</option>
       <option value="staff">Staff</option>
     </select>
 
-    <div id="adminFields">
-      <label>Username</label>
-      <input id="adminUser" placeholder="admin" value="admin"/>
-      <label>Password</label>
-      <input id="adminPass" type="password" placeholder="admin123" value="admin123"/>
+    <div id="adminBlock">
+      <label class="small">Enter Admin PIN</label>
+      <input id="adminPin" type="password" placeholder="Enter 4-digit PIN"/>
+      <div style="display:flex;gap:8px">
+        <button id="adminLoginBtn" style="flex:1">Sign in (Admin)</button>
+        <button id="setPinBtn" style="flex:1;background:#10b981">Set PIN</button>
+      </div>
+      <p class="muted">Default PIN (first time): <strong>4321</strong></p>
     </div>
 
-    <div id="staffFields" style="display:none">
-      <label>Staff Name</label>
-      <select id="staffUser">
-        <option>Raj</option>
-        <option>Kumar</option>
-        <option>Sita</option>
-      </select>
+    <div id="staffBlock" style="display:none">
+      <label class="small">Staff</label>
+      <select id="staffUser"></select>
+      <button id="staffLoginBtn">Sign in (Staff)</button>
     </div>
 
-    <button id="loginBtn">Sign in</button>
-
-    <p class="small" style="margin-top:8px">Demo: admin/admin123 — Staff: Raj/Kumar/Sita</p>
+    <p class="muted" style="margin-top:8px">After login, admin goes to <code>admin.html</code>, staff to <code>staff.html</code>.</p>
   </div>
 
 <script>
-  // Ensure default staff list exists (so admin select works later)
-  if(!localStorage.getItem('staffList')){
-    localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
-  }
+  // Ensure staff list
+  if(!localStorage.getItem('staffList')) localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
 
-  const roleSel = document.getElementById('role');
-  roleSel.addEventListener('change', () => {
-    document.getElementById('adminFields').style.display = roleSel.value==='admin' ? 'block' : 'none';
-    document.getElementById('staffFields').style.display = roleSel.value==='staff' ? 'block' : 'none';
+  // Ensure adminPin exists (default 4321)
+  if(!localStorage.getItem('adminPin')) localStorage.setItem('adminPin', '4321');
+
+  const roleEl = document.getElementById('role');
+  const adminBlock = document.getElementById('adminBlock');
+  const staffBlock = document.getElementById('staffBlock');
+  const staffSelect = document.getElementById('staffUser');
+
+  function refreshStaffSelect(){
+    const staff = JSON.parse(localStorage.getItem('staffList')||'[]');
+    staffSelect.innerHTML = staff.map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+  refreshStaffSelect();
+
+  roleEl.addEventListener('change', () => {
+    if(roleEl.value === 'admin'){
+      adminBlock.style.display = 'block';
+      staffBlock.style.display = 'none';
+    } else {
+      adminBlock.style.display = 'none';
+      staffBlock.style.display = 'block';
+    }
   });
 
-  document.getElementById('loginBtn').addEventListener('click', () => {
-    const role = roleSel.value;
-    if(role==='admin'){
-      const u = document.getElementById('adminUser').value.trim();
-      const p = document.getElementById('adminPass').value.trim();
-      if(u==='admin' && p==='admin123'){
-        // admin logged in
-        localStorage.setItem('loggedIn','admin');
-        location.href = 'admin.html';
-      } else {
-        alert('Invalid admin credentials. Demo: admin / admin123');
-      }
+  document.getElementById('adminLoginBtn').addEventListener('click', () => {
+    const entered = document.getElementById('adminPin').value.trim();
+    const stored = localStorage.getItem('adminPin') || '4321';
+    if(entered === stored){
+      localStorage.setItem('adminAuth', 'true'); // admin authenticated flag
+      alert('Admin authenticated');
+      location.href = 'admin.html';
     } else {
-      const staff = document.getElementById('staffUser').value;
-      localStorage.setItem('loggedIn', JSON.stringify({role:'staff', name:staff}));
-      location.href = 'staff.html';
+      alert('Invalid PIN');
     }
+  });
+
+  // Allow admin to set a new PIN (will override)
+  document.getElementById('setPinBtn').addEventListener('click', () => {
+    const newPin = prompt('Enter NEW PIN (4 digits):','');
+    if(!newPin) return;
+    if(!/^\d{4,6}$/.test(newPin)){ alert('PIN should be 4-6 digits'); return; }
+    localStorage.setItem('adminPin', newPin);
+    alert('Admin PIN updated');
+  });
+
+  document.getElementById('staffLoginBtn').addEventListener('click', () => {
+    const staff = staffSelect.value;
+    if(!staff){ alert('Choose staff'); return; }
+    localStorage.setItem('staffAuth', JSON.stringify({name: staff}));
+    location.href = 'staff.html';
   });
 </script>
 </body>
