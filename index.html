@@ -7,32 +7,21 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .cart-panel { transition: transform .3s ease, opacity .3s ease; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items:center; justify-content:center; z-index:50; }
+    .modal { background: white; border-radius: 10px; padding: 18px; max-width: 520px; width: 95%; box-shadow: 0 12px 30px rgba(0,0,0,0.12); }
   </style>
 </head>
 <body class="bg-gradient-to-br from-blue-100 via-white to-blue-200 min-h-screen p-6">
 
-  <!-- HOME BUTTON -->
+  <!-- Home button (always shows main menu) -->
   <a id="homeBtn" href="index.html"
      class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hover:bg-gray-100 transition">
     🏠 Home
   </a>
 
-  <!-- ROOM INPUT (only room) -->
-  <div id="guestFormSection" class="max-w-md mx-auto bg-white shadow-xl p-8 rounded-xl mt-16">
-    <h2 class="text-2xl font-bold mb-4 text-gray-700 text-center">Enter Your Room Number</h2>
-
-    <input id="guestRoomInput" type="number" placeholder="Room Number"
-           class="border w-full p-3 rounded-md mb-4" />
-
-    <button id="guestContinueBtn"
-            class="bg-blue-600 text-white w-full py-3 rounded-lg hover:bg-blue-700 transition">
-      Continue
-    </button>
-  </div>
-
-  <!-- MAIN PORTAL -->
-  <div id="mainPortal" class="hidden flex flex-col items-center">
-    <h1 id="welcomeText" class="text-3xl font-bold text-gray-800 mt-10 mb-6"></h1>
+  <!-- MAIN UI: shows main menu immediately -->
+  <div id="mainPortal" class="flex flex-col items-center">
+    <h1 id="welcomeText" class="text-3xl font-bold text-gray-800 mt-10 mb-6">Welcome, Guest</h1>
 
     <div id="mainMenu" class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl">
       <button onclick="showSection('housekeeping')" class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
@@ -48,20 +37,24 @@
       </button>
     </div>
 
-    <!-- CATEGORY SECTION -->
+    <!-- Category panel -->
     <div id="categorySection" class="hidden w-full max-w-4xl bg-white p-8 mt-10 rounded-2xl shadow-xl relative">
       <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
       <div id="optionsList" class="flex flex-col gap-4 mb-6"></div>
 
+      <!-- request form for non-food -->
       <form id="requestForm" class="space-y-4">
         <textarea id="requestDetails" placeholder="Additional details..." class="border w-full p-3 rounded-md"></textarea>
-        <button type="submit" class="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 w-full">Submit Request</button>
-        <button type="button" onclick="goBack()" class="text-gray-500 underline w-full mt-2">⬅️ Back</button>
+
+        <div class="flex gap-2">
+          <button type="submit" class="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 flex-1">Submit Request</button>
+          <button type="button" onclick="goBack()" class="text-gray-500 underline px-4 py-3">⬅ Back</button>
+        </div>
       </form>
     </div>
   </div>
 
-  <!-- SIDE CART -->
+  <!-- Cart overlay & panel -->
   <div id="cartOverlay" class="fixed inset-0 z-40 hidden bg-black/40"></div>
   <aside id="cartPanel" class="cart-panel fixed top-0 right-0 h-full w-96 transform translate-x-full z-50 bg-white shadow-2xl p-6 overflow-auto">
     <div class="flex items-center justify-between mb-4">
@@ -81,240 +74,320 @@
     </div>
   </aside>
 
-  <!-- SCRIPT -->
-  <script>
-  // Use the file you uploaded as reference: /mnt/data/index_1.html. (I inspected it and based fixes on it.) :contentReference[oaicite:1]{index=1}
+  <!-- Modal: room confirmation (reused for request and order) -->
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div id="modalBox" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <!-- dynamic content injected -->
+    </div>
+  </div>
 
-  // Safe DOM helper
-  const $ = id => document.getElementById(id);
-
-  // Ensure minimal test data exists so menu never empty
-  (function ensureSampleMenu() {
-    try {
-      const existing = localStorage.getItem('foodMenu');
-      if (!existing) {
-        const sample = {
-          "Breakfast": [{name:"Idli", price:"60"}, {name:"Dosa", price:"80"}],
-          "Lunch": [{name:"Veg Thali", price:"150"}],
-          "Snacks": [{name:"French Fries", price:"120"}]
-        };
-        localStorage.setItem('foodMenu', JSON.stringify(sample));
-      }
-    } catch (err) {
-      console.error('Unable to seed foodMenu:', err);
+<script>
+/* ============================
+   Setup & sample menu seed
+   ============================ */
+(function ensureSampleMenu(){
+  try {
+    if(!localStorage.getItem('foodMenu')) {
+      const sample = {
+        "Breakfast":[{name:"Idli",price:"60"},{name:"Dosa",price:"80"}],
+        "Lunch":[{name:"Veg Thali",price:"150"}],
+        "Snacks":[{name:"French Fries",price:"120"}]
+      };
+      localStorage.setItem('foodMenu', JSON.stringify(sample));
     }
-  })();
+  } catch(e){
+    console.error('seed menu failed', e);
+  }
+})();
 
-  // Initialization after DOM
-  document.addEventListener('DOMContentLoaded', () => {
-    // Elements
-    const guestFormSection = $('guestFormSection');
-    const guestRoomInput = $('guestRoomInput');
-    const guestContinueBtn = $('guestContinueBtn');
-    const mainPortal = $('mainPortal');
-    const welcomeText = $('welcomeText');
-    const mainMenu = $('mainMenu');
-    const categorySection = $('categorySection');
-    const optionsList = $('optionsList');
-    const requestForm = $('requestForm');
+/* Utility */
+const $ = id => document.getElementById(id);
 
-    const cartPanel = $('cartPanel');
-    const cartOverlay = $('cartOverlay');
-    const cartItemsEl = $('cartItems');
-    const cartSubtotalEl = $('cartSubtotal');
-    const closeCartBtn = $('closeCartBtn');
-    const placeOrderBtn = $('placeOrderBtn');
-    const clearCartBtn = $('clearCartBtn');
+/* Globals */
+let currentCategory = '';
+let currentService = '';
 
-    // Floating cart button
-    const floatBtn = document.createElement('button');
-    floatBtn.innerText = '🛒 Cart';
-    floatBtn.className = 'fixed bottom-6 right-6 bg-blue-600 text-white px-4 py-3 rounded-full shadow-lg';
-    floatBtn.onclick = openCart;
-    document.body.appendChild(floatBtn);
+/* SERVICES */
+const services = {
+  housekeeping: { title: '🧹 Housekeeping Services', options: ['Room Cleaning','Laundry Service','Extra Towels','Room Supplies','Other Requests'] },
+  travel: { title: '🚗 Travel Assistance', options: ['Airport Pickup','Local Cab','Tour Guide','Car Rental','Other Travel Help'] },
+  food: { title: '🍽️ Food Menu', dynamic: true }
+};
 
-    // Auto show if room saved
-    const savedRoom = localStorage.getItem('guestRoom');
-    if (savedRoom) {
-      guestFormSection.classList.add('hidden');
-      mainPortal.classList.remove('hidden');
-      mainMenu.classList.remove('hidden');
-      categorySection.classList.add('hidden');
-      welcomeText.innerText = `Welcome, Guest (Room ${savedRoom})`;
-    }
+/* Show section */
+function showSection(category){
+  currentCategory = category;
+  currentService = '';
+  const section = services[category];
+  if(!section) return console.error('unknown section', category);
+  $('mainMenu').classList.add('hidden');
+  $('categorySection').classList.remove('hidden');
+  $('categoryTitle').innerText = section.title;
+  const list = $('optionsList');
+  list.innerHTML = '';
 
-    // Continue button
-    guestContinueBtn.addEventListener('click', () => {
-      const room = guestRoomInput.value && guestRoomInput.value.trim();
-      if (!room) return alert('Please enter room number');
-      localStorage.setItem('guestRoom', room);
-      localStorage.setItem('guestName', 'Guest');
-      guestFormSection.classList.add('hidden');
-      mainPortal.classList.remove('hidden');
-      welcomeText.innerText = `Welcome, Guest (Room ${room})`;
-    });
-
-    // SERVICES
-    let currentCategory = '';
-    let currentService = '';
-
-    const services = {
-      housekeeping: { title: '🧹 Housekeeping Services', options: ['Room Cleaning','Laundry Service','Extra Towels','Room Supplies','Other Requests'] },
-      travel: { title: '🚗 Travel Assistance', options: ['Airport Pickup','Local Cab','Tour Guide','Car Rental','Other Travel Help'] },
-      food: { title: '🍽️ Food Menu', dynamic: true }
-    };
-
-    // Show section
-    window.showSection = function(category) {
-      currentCategory = category;
-      currentService = '';
-      const section = services[category];
-      if (!section) return console.error('Unknown section', category);
-
-      mainMenu.classList.add('hidden');
-      categorySection.classList.remove('hidden');
-      $('categoryTitle').innerText = section.title;
-      optionsList.innerHTML = '';
-
-      if (section.dynamic) {
-        let menu = {};
-        try { menu = JSON.parse(localStorage.getItem('foodMenu') || '{}'); } catch(e){ menu = {}; console.error(e); }
-        if (!Object.keys(menu).length) {
-          optionsList.innerHTML = '<p class="text-gray-600">No food items available.</p>';
-          return;
-        }
-        Object.keys(menu).forEach(cat => {
-          const h = document.createElement('h3'); h.className='text-lg font-bold text-gray-700 mt-6'; h.innerText = cat;
-          optionsList.appendChild(h);
-          (menu[cat]||[]).forEach(item=>{
-            const row = document.createElement('div');
-            row.className = 'flex items-center justify-between bg-gray-100 p-4 rounded-lg';
-            row.innerHTML = `
-              <div>
-                <div class="font-semibold">${item.name}</div>
-                <div class="text-sm text-gray-600">₹${item.price}</div>
-              </div>
-              <button class="bg-green-600 text-white px-3 py-1 rounded add-cart">Add to Cart</button>
-            `;
-            row.querySelector('.add-cart').addEventListener('click', (e)=> { e.stopPropagation(); addToCart(item.name, Number(item.price)); });
-            optionsList.appendChild(row);
-          });
-        });
-        return;
-      }
-
-      // non-food
-      section.options.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.className = 'bg-gray-100 hover:bg-blue-100 font-semibold py-3 rounded-lg';
-        btn.innerText = opt;
-        btn.addEventListener('click', () => {
-          currentService = opt;
-          document.querySelectorAll('#optionsList button').forEach(b=>b.classList.remove('bg-blue-200'));
-          btn.classList.add('bg-blue-200');
-        });
-        optionsList.appendChild(btn);
-      });
-    };
-
-    window.goBack = function(){
-      mainMenu.classList.remove('hidden');
-      categorySection.classList.add('hidden');
-    };
-
-    // Request form (non-food)
-    if (requestForm) {
-      requestForm.addEventListener('submit', (e)=>{
-        e.preventDefault();
-        const name = localStorage.getItem('guestName') || 'Guest';
-        const room = localStorage.getItem('guestRoom') || '';
-        const details = $('requestDetails') ? $('requestDetails').value.trim() : '';
-        const request = { type: currentCategory, service: currentService || 'General Request', name, room, details, status:'Pending', assigned_to:'', time: new Date().toLocaleString() };
-        const all = JSON.parse(localStorage.getItem('requests')||'[]'); all.push(request); localStorage.setItem('requests', JSON.stringify(all));
-        alert('Request submitted successfully!');
-        requestForm.reset();
-        goBack();
-      });
-    }
-
-    // CART logic (safe)
-    function getCart(){ try { return JSON.parse(localStorage.getItem('cart')||'[]'); } catch(e){ return []; } }
-    function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
-
-    function renderCart(){
-      const cart = getCart();
-      cartItemsEl.innerHTML = '';
-      if (!cart.length){ cartItemsEl.innerHTML = '<p class="text-gray-600">Cart is empty.</p>'; cartSubtotalEl.innerText = '₹0'; return; }
-      let subtotal = 0;
-      cart.forEach((it, idx)=>{
-        subtotal += it.price * it.qty;
-        const div = document.createElement('div'); div.className='flex justify-between bg-gray-100 p-3 rounded';
-        div.innerHTML = `
+  if(section.dynamic){
+    let menu = {};
+    try { menu = JSON.parse(localStorage.getItem('foodMenu')||'{}'); } catch(e){ menu = {}; }
+    if(!Object.keys(menu).length){ list.innerHTML = '<p class="text-gray-600">No food items available.</p>'; return; }
+    Object.keys(menu).forEach(cat => {
+      const h = document.createElement('h3'); h.className='text-lg font-bold text-gray-700 mt-6'; h.innerText = cat;
+      list.appendChild(h);
+      (menu[cat]||[]).forEach(item=>{
+        const row = document.createElement('div');
+        row.className='flex items-center justify-between bg-gray-100 p-4 rounded-lg';
+        row.innerHTML = `
           <div>
-            <div class="font-semibold">${it.name}</div>
-            <div class="text-sm text-gray-600">₹${it.price} × ${it.qty}</div>
+            <div class="font-semibold">${item.name}</div>
+            <div class="text-sm text-gray-600">₹${item.price}</div>
           </div>
-          <div class="flex items-center gap-2">
-            <button class="px-2 bg-gray-200 dec" data-idx="${idx}">-</button>
-            <div>${it.qty}</div>
-            <button class="px-2 bg-gray-200 inc" data-idx="${idx}">+</button>
-            <button class="text-red-600 del" data-idx="${idx}">Remove</button>
-          </div>
+          <button class="bg-green-600 text-white px-3 py-1 rounded add-cart">Add to Cart</button>
         `;
-        cartItemsEl.appendChild(div);
+        row.querySelector('.add-cart').addEventListener('click', ()=>{ addToCart(item.name, Number(item.price)); });
+        list.appendChild(row);
       });
-      cartSubtotalEl.innerText = '₹' + subtotal;
+    });
+    return;
+  }
+
+  // non-food categories
+  section.options.forEach(opt=>{
+    const btn = document.createElement('button');
+    btn.className = 'bg-gray-100 hover:bg-blue-100 font-semibold py-3 rounded-lg';
+    btn.innerText = opt;
+    btn.addEventListener('click', ()=>{
+      currentService = opt;
+      document.querySelectorAll('#optionsList button').forEach(b=>b.classList.remove('bg-blue-200'));
+      btn.classList.add('bg-blue-200');
+    });
+    list.appendChild(btn);
+  });
+}
+
+/* go back */
+function goBack(){
+  $('mainMenu').classList.remove('hidden');
+  $('categorySection').classList.add('hidden');
+}
+
+/* ============================
+   REQUEST SUBMISSION (non-food)
+   - On Submit: show room-confirm modal
+   - Room used only for this request (not saved)
+   ============================ */
+$('requestForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  // capture details user entered
+  const details = $('requestDetails').value.trim();
+  // prepare request object template
+  const requestTemplate = {
+    type: currentCategory,
+    service: currentService || 'General Request',
+    name: 'Guest',
+    room: '', // to be filled by modal
+    details,
+    status: 'Pending',
+    assigned_to: '',
+    time: new Date().toLocaleString()
+  };
+
+  // open modal to confirm room, then save
+  openRoomModal({
+    title: 'Confirm Room Number',
+    hint: 'Enter your room number to confirm this request',
+    confirmText: 'Confirm & Send',
+    onConfirm: (roomValue) => {
+      requestTemplate.room = roomValue;
+      // Save request to localStorage
+      const all = JSON.parse(localStorage.getItem('requests')||'[]');
+      all.push(requestTemplate);
+      localStorage.setItem('requests', JSON.stringify(all));
+      // feedback
+      closeModal();
+      alert('Request submitted successfully!');
+      // reset form and UI
+      $('requestForm').reset();
+      goBack();
     }
+  });
+});
 
-    function openCart(){ cartOverlay.classList.remove('hidden'); cartPanel.style.transform = 'translateX(0)'; renderCart(); }
-    function closeCart(){ cartOverlay.classList.add('hidden'); cartPanel.style.transform = 'translateX(100%)'; }
+/* ============================
+   CART SYSTEM & ORDER FLOW
+   - Place Order shows order summary + room modal (Option 2)
+   - Room not saved permanently; cart cleared after order
+   ============================ */
 
-    closeCartBtn.addEventListener('click', closeCart);
-    cartOverlay.addEventListener('click', closeCart);
-    clearCartBtn.addEventListener('click', ()=>{ if(confirm('Clear cart?')){ setCart([]); renderCart(); } });
+function getCart(){ try{ return JSON.parse(localStorage.getItem('cart')||'[]'); }catch(e){return[];} }
+function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
 
-    cartItemsEl.addEventListener('click', (e)=>{
-      const target = e.target;
-      if (target.classList.contains('inc') || target.classList.contains('dec') || target.classList.contains('del')){
-        const idx = Number(target.dataset.idx);
-        const cart = getCart();
-        if (!cart[idx]) return;
-        if (target.classList.contains('inc')) cart[idx].qty++;
-        if (target.classList.contains('dec')) cart[idx].qty = Math.max(1, cart[idx].qty-1);
-        if (target.classList.contains('del')) cart.splice(idx,1);
-        setCart(cart); renderCart();
-      }
-    });
+const cartOverlay = $('cartOverlay');
+const cartPanel = $('cartPanel');
+const cartItemsEl = $('cartItems');
+const cartSubtotalEl = $('cartSubtotal');
 
-    // add to cart
-    window.addToCart = function(name, price){
-      const cart = getCart();
-      const found = cart.find(c => c.name === name && c.price === price);
-      if (found) found.qty++;
-      else cart.push({name, price, qty:1});
-      setCart(cart);
-      openCart();
-    };
+function renderCart(){
+  const cart = getCart();
+  cartItemsEl.innerHTML = '';
+  if(!cart.length){ cartItemsEl.innerHTML = '<p class="text-gray-600">Cart is empty.</p>'; cartSubtotalEl.innerText='₹0'; return; }
+  let subtotal = 0;
+  cart.forEach((it,idx)=>{
+    subtotal += it.price * it.qty;
+    const div = document.createElement('div');
+    div.className = 'flex justify-between bg-gray-100 p-3 rounded';
+    div.innerHTML = `
+      <div>
+        <div class="font-semibold">${it.name}</div>
+        <div class="text-sm text-gray-600">₹${it.price} × ${it.qty}</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="px-2 bg-gray-200 dec" data-idx="${idx}">-</button>
+        <div>${it.qty}</div>
+        <button class="px-2 bg-gray-200 inc" data-idx="${idx}">+</button>
+        <button class="text-red-600 del" data-idx="${idx}">Remove</button>
+      </div>
+    `;
+    cartItemsEl.appendChild(div);
+  });
+  cartSubtotalEl.innerText = '₹' + subtotal;
+}
 
-    // place order -> create admin request
-    placeOrderBtn.addEventListener('click', ()=>{
-      const cart = getCart(); if (!cart.length) return alert('Cart is empty.');
-      const name = 'Guest'; const room = localStorage.getItem('guestRoom') || '';
-      const details = cart.map(i=>`${i.name} ×${i.qty} (₹${i.price})`).join('; ');
-      const total = cart.reduce((s,i)=>s+i.qty*i.price,0);
-      const request = { type:'Food', service:'Food Order', name, room, details: details + ` — Total: ₹${total}`, status:'Pending', assigned_to:'', time:new Date().toLocaleString() };
-      const all = JSON.parse(localStorage.getItem('requests')||'[]'); all.push(request); localStorage.setItem('requests', JSON.stringify(all));
-      alert('Food order placed successfully!');
-      setCart([]); renderCart(); closeCart();
-    });
+function openCart(){ cartOverlay.classList.remove('hidden'); cartPanel.style.transform = 'translateX(0)'; renderCart(); }
+function closeCart(){ cartOverlay.classList.add('hidden'); cartPanel.style.transform = 'translateX(100%)'; }
 
-    // initialize cart view
-    renderCart();
+$('closeCartBtn').addEventListener('click', closeCart);
+cartOverlay.addEventListener('click', closeCart);
+$('clearCartBtn').addEventListener('click', ()=>{
+  if(confirm('Clear cart?')){ setCart([]); renderCart(); }
+});
 
-    // expose openCart globally for testing
-    window.openCart = openCart;
+// floating cart
+(function addFloatCartButton(){
+  const floatBtn = document.createElement('button');
+  floatBtn.innerText = '🛒 Cart';
+  floatBtn.className = 'fixed bottom-6 right-6 bg-blue-600 text-white px-4 py-3 rounded-full shadow-lg';
+  floatBtn.onclick = openCart;
+  document.body.appendChild(floatBtn);
+})();
 
-  }); // DOMContentLoaded end
-  </script>
+cartItemsEl.addEventListener('click', (e)=>{
+  const t = e.target;
+  if(t.classList.contains('inc') || t.classList.contains('dec') || t.classList.contains('del')){
+    const idx = Number(t.dataset.idx);
+    const cart = getCart();
+    if(!cart[idx]) return;
+    if(t.classList.contains('inc')) cart[idx].qty++;
+    if(t.classList.contains('dec')) cart[idx].qty = Math.max(1, cart[idx].qty - 1);
+    if(t.classList.contains('del')) cart.splice(idx,1);
+    setCart(cart); renderCart();
+  }
+});
+
+function addToCart(name, price){
+  const cart = getCart();
+  const found = cart.find(c => c.name === name && c.price === price);
+  if(found) found.qty++;
+  else cart.push({ name, price, qty:1 });
+  setCart(cart);
+  openCart();
+}
+
+/* Place order -> show summary modal (Option 2) */
+$('placeOrderBtn').addEventListener('click', ()=>{
+  const cart = getCart();
+  if(!cart.length) return alert('Cart is empty.');
+
+  // build summary HTML
+  let subtotal = 0;
+  const rows = cart.map(it => {
+    subtotal += it.price * it.qty;
+    return `<div class="flex justify-between py-1"><div>${it.name} × ${it.qty}</div><div>₹${it.price * it.qty}</div></div>`;
+  }).join('');
+
+  const summaryHTML = `
+    <h3 id="modalTitle" class="text-xl font-semibold mb-3">Confirm Food Order</h3>
+    <div class="mb-3 text-sm">${rows}</div>
+    <div class="mb-3 font-bold">Total: ₹${subtotal}</div>
+    <div class="mb-2"><label class="block small text-gray-600">Enter room number to confirm</label>
+      <input id="orderRoomInput" type="number" class="w-full border p-2 rounded" placeholder="Room number" />
+    </div>
+    <div class="flex justify-end gap-2 mt-2">
+      <button id="orderCancelBtn" class="px-3 py-2 rounded bg-gray-200">Cancel</button>
+      <button id="orderConfirmBtn" class="px-3 py-2 rounded bg-blue-600 text-white">Confirm & Place Order</button>
+    </div>
+  `;
+
+  openModal(summaryHTML);
+
+  // wire modal buttons
+  document.getElementById('orderCancelBtn').addEventListener('click', closeModal);
+  document.getElementById('orderConfirmBtn').addEventListener('click', ()=>{
+    const room = document.getElementById('orderRoomInput').value && document.getElementById('orderRoomInput').value.trim();
+    if(!room) return alert('Please enter room number');
+    // build order request
+    const name = 'Guest';
+    const details = cart.map(i => `${i.name} ×${i.qty} (₹${i.price})`).join('; ');
+    const total = cart.reduce((s,i) => s + i.qty * i.price, 0);
+    const req = { type:'Food', service:'Food Order', name, room, details: `${details} — Total: ₹${total}`, status:'Pending', assigned_to:'', time: new Date().toLocaleString() };
+    const all = JSON.parse(localStorage.getItem('requests')||'[]'); all.push(req); localStorage.setItem('requests', JSON.stringify(all));
+    closeModal();
+    setCart([]); renderCart(); closeCart();
+    alert('Order placed — kitchen will prepare it shortly.');
+  }, { once: true });
+});
+
+/* ============================
+   Modal helpers
+   - openRoomModal: custom modal asking room + confirm callback
+   - openModal/closeModal: generic
+   ============================ */
+function openModal(html){
+  $('modalBox').innerHTML = html;
+  $('modalBackdrop').style.display = 'flex';
+}
+function closeModal(){
+  $('modalBackdrop').style.display = 'none';
+  $('modalBox').innerHTML = '';
+}
+
+/* openRoomModal options:
+   { title, hint, confirmText, onConfirm(roomValue) }
+*/
+function openRoomModal(opts){
+  const html = `
+    <h3 id="modalTitle" class="text-xl font-semibold mb-3">${opts.title || 'Confirm Room'}</h3>
+    <div class="mb-3 text-sm text-gray-700">${opts.hint || 'Please enter your room number to confirm'}</div>
+    <input id="confirmRoomInput" type="number" class="w-full border p-2 rounded" placeholder="Room number" />
+    <div class="flex justify-end gap-2 mt-3">
+      <button id="roomCancelBtn" class="px-3 py-2 rounded bg-gray-200">Cancel</button>
+      <button id="roomConfirmBtn" class="px-3 py-2 rounded bg-blue-600 text-white">${opts.confirmText || 'Confirm'}</button>
+    </div>
+  `;
+  openModal(html);
+  document.getElementById('roomCancelBtn').addEventListener('click', closeModal);
+  document.getElementById('roomConfirmBtn').addEventListener('click', ()=>{
+    const val = document.getElementById('confirmRoomInput').value && document.getElementById('confirmRoomInput').value.trim();
+    if(!val) return alert('Please enter room number');
+    // call confirm callback (do not store room)
+    try { opts.onConfirm(val); } catch(e){ console.error(e); }
+  }, { once:true });
+}
+
+/* ============================
+   Init: attach show/hide and render cart
+   ============================ */
+document.addEventListener('DOMContentLoaded', ()=>{
+  renderCart();
+  // close cart btn already wired via ID references earlier
+});
+
+// Expose functions to window (for onclick attributes)
+window.showSection = showSection;
+window.goBack = goBack;
+window.addToCart = addToCart;
+window.openCart = openCart;
+window.closeCart = closeCart;
+
+</script>
 </body>
 </html>
