@@ -9,7 +9,7 @@
     body{font-family:Arial;margin:0;background:#f3f6fb;color:#111}
     header{background:var(--blue);color:#fff;padding:14px 20px}
     .wrap{max-width:1100px;margin:20px auto;padding:12px}
-    .tabs{display:flex;gap:8px;margin-bottom:12px}
+    .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
     .tab{padding:10px 14px;border-radius:8px;background:#e6eefc;color:var(--blue);cursor:pointer}
     .tab.active{background:var(--blue);color:#fff}
     .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
@@ -17,7 +17,7 @@
     table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden}
     th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
     th{background:#f8fafc;color:var(--muted);font-weight:600}
-    .btn{padding:6px 10px;border-radius:6px;border:none;cursor:pointer}
+    .btn{padding:6px 10px;border-radius:6px;border:none;cursor:pointer;margin-left:6px}
     .btn.assign{background:#10b981;color:#fff}
     .btn.inprogress{background:#f59e0b;color:#fff}
     .btn.complete{background:#16a34a;color:#fff}
@@ -25,10 +25,10 @@
     .small{font-size:13px;color:var(--muted)}
     .right{margin-left:auto}
     .status-tag{padding:6px 8px;border-radius:6px;font-weight:600;color:#fff}
-    .status-pending{background:#6b7280}
-    .status-assigned{background:#2563eb}
-    .status-inprogress{background:#f59e0b}
-    .status-completed{background:#16a34a}
+    .status-Pending{background:#6b7280}
+    .status-Assigned{background:#2563eb}
+    .status-In\\ Progress{background:#f59e0b}
+    .status-Completed{background:#16a34a}
     .select-staff{padding:6px;border-radius:6px}
     .topbar{display:flex;align-items:center;gap:12px}
     a.link{color:#fff;text-decoration:underline;margin-left:12px}
@@ -38,7 +38,11 @@
   <header>
     <div class="topbar">
       <div style="font-size:18px;font-weight:700">Admin Dashboard</div>
-      <div style="margin-left:auto" class="small">Signed in as: <strong>Admin</strong> <a class="link" href="index.html">Home</a> <a class="link" href="login.html" id="logoutLink">Logout</a></div>
+      <div style="margin-left:auto" class="small">
+        Signed in as: <strong>Admin</strong>
+        <a class="link" href="index.html">Home</a>
+        <a class="link" href="login.html" id="logoutLink">Logout</a>
+      </div>
     </div>
   </header>
 
@@ -76,21 +80,30 @@
   </div>
 
 <script>
+  // Protect page: require admin auth
+  if(localStorage.getItem('adminAuth') !== 'true'){
+    alert('Admin not authenticated. Please login with PIN.');
+    location.href = 'login.html';
+  }
+
   // Ensure staff list exists
   if(!localStorage.getItem('staffList')) localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
 
-  // Helper: get all requests
   function getRequests(){ return JSON.parse(localStorage.getItem('requests') || '[]'); }
   function setRequests(arr){ localStorage.setItem('requests', JSON.stringify(arr)); }
 
-  // Populate staff select in filter
   function populateStaffFilter(){
     const staff = JSON.parse(localStorage.getItem('staffList')||'[]');
     const sf = document.getElementById('staffFilter');
     sf.innerHTML = '<option value="">All Staff</option>' + staff.map(s=>`<option value="${s}">${s}</option>`).join('');
   }
 
-  // Render table
+  function statusTag(s){ 
+    if(!s) s='Pending';
+    const safe = s.replace(/ /g,'\\ ');
+    return `<span class="status-tag status-${s.replace(/ /g,'-')}">${s}</span>`;
+  }
+
   function render(){
     const all = getRequests();
     const tbody = document.querySelector('#reqTable tbody');
@@ -105,44 +118,37 @@
       if(statusFilter && r.status !== statusFilter) return false;
       if(staffFilter && (r.assigned_to || '') !== staffFilter) return false;
       if(!search) return true;
-      return (r.name||'').toLowerCase().includes(search) || (r.room||'').toLowerCase().includes(search) || (r.service||'').toLowerCase().includes(search);
+      return (r.name||'').toLowerCase().includes(search) || (r.room||'').toString().toLowerCase().includes(search) || (r.service||'').toLowerCase().includes(search);
     });
 
-    filtered.slice().reverse().forEach((r,i)=>{
-      const idx = all.length - 1 - i;
+    // show newest first
+    filtered.slice().reverse().forEach((r, i) => {
+      const globalIndex = (all.length - 1) - i;
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${idx+1}</td>
+        <td>${globalIndex+1}</td>
         <td>${r.type}</td>
         <td>${r.service}</td>
-        <td>${r.name||'-'}</td>
-        <td>${r.room||'-'}</td>
-        <td>${r.time||'-'}</td>
+        <td>${r.name || '-'}</td>
+        <td>${r.room || '-'}</td>
+        <td>${r.time || '-'}</td>
         <td>${statusTag(r.status)}</td>
         <td>
-          <select class="select-staff" data-idx="${idx}">
+          <select class="select-staff" data-idx="${globalIndex}">
             <option value="">Assign staff</option>
             ${JSON.parse(localStorage.getItem('staffList')).map(s=>`<option ${r.assigned_to===s?'selected':''} value="${s}">${s}</option>`).join('')}
           </select>
-          <button class="btn assign" data-assign="${idx}">Assign</button>
-          <button class="btn inprogress" data-inprogress="${idx}">Start</button>
-          <button class="btn complete" data-complete="${idx}">Complete</button>
-          <button class="btn delete" data-delete="${idx}">Delete</button>
+          <button class="btn assign" data-assign="${globalIndex}">Assign</button>
+          <button class="btn inprogress" data-inprogress="${globalIndex}">Start</button>
+          <button class="btn complete" data-complete="${globalIndex}">Complete</button>
+          <button class="btn delete" data-delete="${globalIndex}">Delete</button>
         </td>
       `;
       tbody.appendChild(tr);
     });
   }
 
-  function statusTag(s){ 
-    if(!s) s='Pending';
-    const map = {'Pending':'status-pending','Assigned':'status-assigned','In Progress':'status-inprogress','Completed':'status-completed'};
-    const cls = map[s] || 'status-pending';
-    return `<span class="status-tag ${cls}">${s}</span>`;
-  }
-
-  // Events (delegation)
-  document.addEventListener('click', (e)=>{
+  document.addEventListener('click', (e) => {
     if(e.target.dataset.assign){
       const idx = parseInt(e.target.dataset.assign);
       const select = document.querySelector(`select.select-staff[data-idx="${idx}"]`);
@@ -151,7 +157,8 @@
       const all = getRequests();
       all[idx].status = 'Assigned';
       all[idx].assigned_to = staff;
-      setRequests(all); render();
+      setRequests(all);
+      render();
     }
     if(e.target.dataset.inprogress){
       const idx = parseInt(e.target.dataset.inprogress);
@@ -168,32 +175,28 @@
     }
   });
 
-  // Tab switching
-  document.getElementById('tabs').addEventListener('click', (ev)=>{
+  document.getElementById('tabs').addEventListener('click', (ev) => {
     if(!ev.target.classList.contains('tab')) return;
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
     ev.target.classList.add('active'); render();
   });
 
-  // Filters
   document.getElementById('searchInput').addEventListener('input', render);
   document.getElementById('filterStatus').addEventListener('change', render);
   document.getElementById('staffFilter').addEventListener('change', render);
 
-  // Clear All
-  document.getElementById('clearAllBtn').addEventListener('click', ()=>{
+  document.getElementById('clearAllBtn').addEventListener('click', () => {
     if(!confirm('Delete all requests?')) return;
     localStorage.removeItem('requests'); render();
   });
 
-  // Logout
-  document.getElementById('logoutLink').addEventListener('click', (e)=>{
-    localStorage.removeItem('loggedIn');
+  document.getElementById('logoutLink').addEventListener('click', ()=>{
+    localStorage.removeItem('adminAuth');
+    // keep PIN stored though
   });
 
   // Init
-  populateStaffFilter();
-  render();
+  populateStaffFilter(); render();
 </script>
 </body>
 </html>
