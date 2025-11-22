@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Staff Dashboard - Hotel Portal</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+    body{font-family:Arial;background:#f4f6fb;margin:0;padding:20px}
+    .wrap{max-width:900px;margin:0 auto}
+    .card{background:#fff;padding:12px;border-radius:8px;margin-bottom:10px;box-shadow:0 6px 20px rgba(0,0,0,0.05)}
+    .btn{padding:8px 12px;border-radius:6px;border:none;cursor:pointer}
+    .btn.start{background:#f59e0b;color:#fff}
+    .btn.complete{background:#16a34a;color:#fff}
+    header{display:flex;gap:12px;align-items:center}
+    a.link{color:#2563eb;text-decoration:underline}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h2>Staff Dashboard</h2>
+      <div style="margin-left:auto">
+        <span id="staffName"></span> &nbsp; <a class="link" href="login.html" id="logout">Logout</a>
+      </div>
+    </header>
+
+    <div id="tasks"></div>
+    <p class="small">Only tasks assigned to you will appear here.</p>
+  </div>
+
+<script>
+  // Check login
+  const logged = JSON.parse(localStorage.getItem('loggedIn') || 'null');
+  if(!logged || logged.role!=='staff'){ alert('Please login as staff'); location.href='login.html'; }
+  const staffName = logged.name;
+  document.getElementById('staffName').innerText = staffName;
+
+  function getRequests(){ return JSON.parse(localStorage.getItem('requests')||'[]'); }
+  function setRequests(r){ localStorage.setItem('requests', JSON.stringify(r)); }
+
+  function render(){
+    const all = getRequests();
+    const mine = all.map((r,i)=>({r,i})).filter(x=>x.r.assigned_to===staffName);
+    const container = document.getElementById('tasks');
+    container.innerHTML = '';
+    if(mine.length===0){ container.innerHTML = '<p>No tasks assigned yet.</p>'; return; }
+    mine.forEach(x=>{
+      const r = x.r; const idx = x.i;
+      const div = document.createElement('div'); div.className='card';
+      div.innerHTML = `<div><strong>${r.service}</strong> — ${r.type} <div class="small">Room: ${r.room} | Guest: ${r.name || 'N/A'} | Time: ${r.time}</div></div>
+        <div style="margin-top:8px">
+          <button class="btn start" data-start="${idx}">Start</button>
+          <button class="btn complete" data-complete="${idx}">Complete</button>
+        </div>`;
+      container.appendChild(div);
+    });
+  }
+
+  document.addEventListener('click', (e)=>{
+    if(e.target.dataset.start){
+      const idx = parseInt(e.target.dataset.start);
+      const all = getRequests(); all[idx].status='In Progress'; setRequests(all); render();
+    }
+    if(e.target.dataset.complete){
+      const idx = parseInt(e.target.dataset.complete);
+      const all = getRequests(); all[idx].status='Completed'; setRequests(all); render();
+    }
+  });
+
+  document.getElementById('logout').addEventListener('click', ()=>{ localStorage.removeItem('loggedIn'); });
+
+  render();
+</script>
+</body>
+</html>

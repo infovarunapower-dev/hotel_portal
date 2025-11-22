@@ -1,142 +1,199 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Admin Dashboard - Hotel Portal</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+    :root{--blue:#2563eb;--muted:#6b7280}
+    body{font-family:Arial;margin:0;background:#f3f6fb;color:#111}
+    header{background:var(--blue);color:#fff;padding:14px 20px}
+    .wrap{max-width:1100px;margin:20px auto;padding:12px}
+    .tabs{display:flex;gap:8px;margin-bottom:12px}
+    .tab{padding:10px 14px;border-radius:8px;background:#e6eefc;color:var(--blue);cursor:pointer}
+    .tab.active{background:var(--blue);color:#fff}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    input[type=text]{padding:8px;border-radius:6px;border:1px solid #ddd}
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
+    th{background:#f8fafc;color:var(--muted);font-weight:600}
+    .btn{padding:6px 10px;border-radius:6px;border:none;cursor:pointer}
+    .btn.assign{background:#10b981;color:#fff}
+    .btn.inprogress{background:#f59e0b;color:#fff}
+    .btn.complete{background:#16a34a;color:#fff}
+    .btn.delete{background:#ef4444;color:#fff}
+    .small{font-size:13px;color:var(--muted)}
+    .right{margin-left:auto}
+    .status-tag{padding:6px 8px;border-radius:6px;font-weight:600;color:#fff}
+    .status-pending{background:#6b7280}
+    .status-assigned{background:#2563eb}
+    .status-inprogress{background:#f59e0b}
+    .status-completed{background:#16a34a}
+    .select-staff{padding:6px;border-radius:6px}
+    .topbar{display:flex;align-items:center;gap:12px}
+    a.link{color:#fff;text-decoration:underline;margin-left:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div style="font-size:18px;font-weight:700">Admin Dashboard</div>
+      <div style="margin-left:auto" class="small">Signed in as: <strong>Admin</strong> <a class="link" href="index.html">Home</a> <a class="link" href="login.html" id="logoutLink">Logout</a></div>
+    </div>
+  </header>
 
-  <body class="bg-gray-100 min-h-screen p-6">
-    <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">
-      🧾 Admin Dashboard
-    </h1>
+  <div class="wrap">
+    <div class="controls">
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-cat="all">All</div>
+        <div class="tab" data-cat="Housekeeping">🧹 Housekeeping</div>
+        <div class="tab" data-cat="Travel">🚗 Travel</div>
+        <div class="tab" data-cat="Food">🍽️ Food</div>
+      </div>
 
-    <!-- Tabs -->
-    <div class="flex justify-center mb-6 space-x-4">
-      <button
-        class="tab-btn bg-blue-500 text-white px-5 py-2 rounded-lg hover:bg-blue-600"
-        onclick="showTab('housekeeping')"
-        id="tab-housekeeping"
-      >
-        🧹 Housekeeping
-      </button>
-      <button
-        class="tab-btn bg-gray-300 text-gray-800 px-5 py-2 rounded-lg hover:bg-blue-200"
-        onclick="showTab('travel')"
-        id="tab-travel"
-      >
-        🚗 Travel
-      </button>
-      <button
-        class="tab-btn bg-gray-300 text-gray-800 px-5 py-2 rounded-lg hover:bg-blue-200"
-        onclick="showTab('food')"
-        id="tab-food"
-      >
-        🍽️ Food
-      </button>
+      <input type="text" id="searchInput" placeholder="Search by name, room, or service..." style="flex:1"/>
+      <select id="filterStatus">
+        <option value="">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="Assigned">Assigned</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Completed">Completed</option>
+      </select>
+
+      <select id="staffFilter">
+        <option value="">All Staff</option>
+      </select>
+
+      <button class="btn delete" id="clearAllBtn">Clear All</button>
     </div>
 
-    <!-- Clear Button -->
-    <div class="flex justify-center mb-8">
-      <button
-        onclick="clearRequests()"
-        class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600"
-      >
-        🗑️ Clear All Requests
-      </button>
-    </div>
+    <table id="reqTable">
+      <thead>
+        <tr><th>#</th><th>Category</th><th>Service</th><th>Guest</th><th>Room</th><th>Time</th><th>Status</th><th>Assign / Action</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-    <!-- Request Sections -->
-    <div id="housekeeping" class="request-tab max-w-4xl mx-auto"></div>
-    <div id="travel" class="request-tab hidden max-w-4xl mx-auto"></div>
-    <div id="food" class="request-tab hidden max-w-4xl mx-auto"></div>
+<script>
+  // Ensure staff list exists
+  if(!localStorage.getItem('staffList')) localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
 
-    <script>
-      // Load requests
-      function loadRequests() {
-        const requests = JSON.parse(localStorage.getItem("requests") || "[]");
+  // Helper: get all requests
+  function getRequests(){ return JSON.parse(localStorage.getItem('requests') || '[]'); }
+  function setRequests(arr){ localStorage.setItem('requests', JSON.stringify(arr)); }
 
-        // Group by category
-        const grouped = { housekeeping: [], travel: [], food: [] };
-        requests.forEach((req) => {
-          if (grouped[req.category]) grouped[req.category].push(req);
-        });
+  // Populate staff select in filter
+  function populateStaffFilter(){
+    const staff = JSON.parse(localStorage.getItem('staffList')||'[]');
+    const sf = document.getElementById('staffFilter');
+    sf.innerHTML = '<option value="">All Staff</option>' + staff.map(s=>`<option value="${s}">${s}</option>`).join('');
+  }
 
-        // Render each category
-        Object.keys(grouped).forEach((cat) => {
-          const container = document.getElementById(cat);
-          container.innerHTML = "";
-          if (grouped[cat].length === 0) {
-            container.innerHTML = `<p class='text-center text-gray-500 text-lg'>No ${cat} requests yet.</p>`;
-          } else {
-            grouped[cat]
-              .slice()
-              .reverse()
-              .forEach((req, index) => {
-                const card = document.createElement("div");
-                card.className =
-                  "bg-white p-5 mb-4 rounded-xl shadow-md border border-gray-200";
-                card.innerHTML = `
-                  <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-semibold text-blue-700">${req.service}</h3>
-                    <button
-                      onclick="deleteRequest('${cat}', ${index})"
-                      class="text-sm bg-red-100 text-red-600 px-3 py-1 rounded-md hover:bg-red-200"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                  <p><strong>Guest:</strong> ${req.name}</p>
-                  <p><strong>Room:</strong> ${req.room}</p>
-                  <p><strong>Details:</strong> ${req.details}</p>
-                  <p class="text-sm text-gray-500 mt-2">${req.time}</p>
-                `;
-                container.appendChild(card);
-              });
-          }
-        });
-      }
+  // Render table
+  function render(){
+    const all = getRequests();
+    const tbody = document.querySelector('#reqTable tbody');
+    tbody.innerHTML = '';
+    const search = document.getElementById('searchInput').value.trim().toLowerCase();
+    const statusFilter = document.getElementById('filterStatus').value;
+    const staffFilter = document.getElementById('staffFilter').value;
+    const activeTab = document.querySelector('.tab.active').dataset.cat;
 
-      // Delete single request
-      function deleteRequest(category, index) {
-        const all = JSON.parse(localStorage.getItem("requests") || "[]");
-        const filtered = all.filter((req) => req.category === category);
-        const others = all.filter((req) => req.category !== category);
-        filtered.splice(filtered.length - 1 - index, 1);
-        localStorage.setItem("requests", JSON.stringify([...others, ...filtered]));
-        loadRequests();
-      }
+    const filtered = all.filter(r=>{
+      if(activeTab!=='all' && r.type !== activeTab) return false;
+      if(statusFilter && r.status !== statusFilter) return false;
+      if(staffFilter && (r.assigned_to || '') !== staffFilter) return false;
+      if(!search) return true;
+      return (r.name||'').toLowerCase().includes(search) || (r.room||'').toLowerCase().includes(search) || (r.service||'').toLowerCase().includes(search);
+    });
 
-      // Clear all requests
-      function clearRequests() {
-        if (confirm("Are you sure you want to delete all requests?")) {
-          localStorage.removeItem("requests");
-          loadRequests();
-        }
-      }
+    filtered.slice().reverse().forEach((r,i)=>{
+      const idx = all.length - 1 - i;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${idx+1}</td>
+        <td>${r.type}</td>
+        <td>${r.service}</td>
+        <td>${r.name||'-'}</td>
+        <td>${r.room||'-'}</td>
+        <td>${r.time||'-'}</td>
+        <td>${statusTag(r.status)}</td>
+        <td>
+          <select class="select-staff" data-idx="${idx}">
+            <option value="">Assign staff</option>
+            ${JSON.parse(localStorage.getItem('staffList')).map(s=>`<option ${r.assigned_to===s?'selected':''} value="${s}">${s}</option>`).join('')}
+          </select>
+          <button class="btn assign" data-assign="${idx}">Assign</button>
+          <button class="btn inprogress" data-inprogress="${idx}">Start</button>
+          <button class="btn complete" data-complete="${idx}">Complete</button>
+          <button class="btn delete" data-delete="${idx}">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
 
-      // Tab switching
-      function showTab(tab) {
-        document
-          .querySelectorAll(".request-tab")
-          .forEach((el) => el.classList.add("hidden"));
-        document.getElementById(tab).classList.remove("hidden");
+  function statusTag(s){ 
+    if(!s) s='Pending';
+    const map = {'Pending':'status-pending','Assigned':'status-assigned','In Progress':'status-inprogress','Completed':'status-completed'};
+    const cls = map[s] || 'status-pending';
+    return `<span class="status-tag ${cls}">${s}</span>`;
+  }
 
-        document
-          .querySelectorAll(".tab-btn")
-          .forEach((b) => (b.className = b.className.replace("bg-blue-500", "bg-gray-300").replace("text-white", "text-gray-800")));
-        document
-          .getElementById("tab-" + tab)
-          .classList.replace("bg-gray-300", "bg-blue-500");
-        document
-          .getElementById("tab-" + tab)
-          .classList.replace("text-gray-800", "text-white");
-      }
+  // Events (delegation)
+  document.addEventListener('click', (e)=>{
+    if(e.target.dataset.assign){
+      const idx = parseInt(e.target.dataset.assign);
+      const select = document.querySelector(`select.select-staff[data-idx="${idx}"]`);
+      const staff = select.value;
+      if(!staff){ alert('Choose staff to assign'); return; }
+      const all = getRequests();
+      all[idx].status = 'Assigned';
+      all[idx].assigned_to = staff;
+      setRequests(all); render();
+    }
+    if(e.target.dataset.inprogress){
+      const idx = parseInt(e.target.dataset.inprogress);
+      const all = getRequests(); all[idx].status='In Progress'; setRequests(all); render();
+    }
+    if(e.target.dataset.complete){
+      const idx = parseInt(e.target.dataset.complete);
+      const all = getRequests(); all[idx].status='Completed'; setRequests(all); render();
+    }
+    if(e.target.dataset.delete){
+      const idx = parseInt(e.target.dataset.delete);
+      if(!confirm('Delete this request?')) return;
+      const all = getRequests(); all.splice(idx,1); setRequests(all); render();
+    }
+  });
 
-      // Default view
-      showTab("housekeeping");
-      loadRequests();
-    </script>
-  </body>
+  // Tab switching
+  document.getElementById('tabs').addEventListener('click', (ev)=>{
+    if(!ev.target.classList.contains('tab')) return;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    ev.target.classList.add('active'); render();
+  });
+
+  // Filters
+  document.getElementById('searchInput').addEventListener('input', render);
+  document.getElementById('filterStatus').addEventListener('change', render);
+  document.getElementById('staffFilter').addEventListener('change', render);
+
+  // Clear All
+  document.getElementById('clearAllBtn').addEventListener('click', ()=>{
+    if(!confirm('Delete all requests?')) return;
+    localStorage.removeItem('requests'); render();
+  });
+
+  // Logout
+  document.getElementById('logoutLink').addEventListener('click', (e)=>{
+    localStorage.removeItem('loggedIn');
+  });
+
+  // Init
+  populateStaffFilter();
+  render();
+</script>
+</body>
 </html>
