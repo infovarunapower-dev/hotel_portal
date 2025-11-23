@@ -1,22 +1,40 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
   <title>Login - Hotel Portal (PIN)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <style>
-    body{font-family:Arial;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f3f6fb}
-    .box{background:#fff;padding:22px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.08);width:360px}
-    input,select,button{width:100%;padding:10px;margin:8px 0;border-radius:6px;border:1px solid #ddd;box-sizing:border-box}
-    button{background:#2563eb;color:#fff;border:none;cursor:pointer}
+    body{
+      font-family:Arial, sans-serif;
+      display:flex;align-items:center;justify-content:center;
+      min-height:100vh;background:#f3f6fb;margin:0;
+    }
+    .box{
+      background:#fff;padding:25px;border-radius:12px;
+      box-shadow:0 8px 28px rgba(0,0,0,0.08);
+      width:370px;
+    }
+    h2{margin:0 0 6px}
+    input,select,button{
+      width:100%;padding:10px;margin:8px 0;
+      border-radius:6px;border:1px solid #ddd;box-sizing:border-box;
+      font-size:14px;
+    }
+    button{
+      background:#2563eb;color:#fff;border:none;cursor:pointer;
+      font-size:14px;font-weight:600;
+    }
+    button:hover{opacity:0.9}
+    .green{background:#10b981!important}
     .muted{font-size:13px;color:#666;margin-top:6px}
     .small{font-size:13px;color:#444}
-    .link{color:#2563eb;cursor:pointer;text-decoration:underline}
   </style>
 </head>
 <body>
+
   <div class="box">
-    <h2 style="margin:0 0 6px">Sign In</h2>
+    <h2>Sign In</h2>
     <p class="muted">Choose role and sign in. Admin uses PIN.</p>
 
     <label class="small">Role</label>
@@ -25,80 +43,148 @@
       <option value="staff">Staff</option>
     </select>
 
+    <!-- ADMIN LOGIN BLOCK -->
     <div id="adminBlock">
       <label class="small">Enter Admin PIN</label>
       <input id="adminPin" type="password" placeholder="Enter 4-digit PIN"/>
+
       <div style="display:flex;gap:8px">
-        <button id="adminLoginBtn" style="flex:1">Sign in (Admin)</button>
-        <button id="setPinBtn" style="flex:1;background:#10b981">Set PIN</button>
+        <button id="adminLoginBtn">Sign in (Admin)</button>
+        <button id="setPinBtn" class="green">Set PIN</button>
       </div>
+
       <p class="muted">Default PIN (first time): <strong>4321</strong></p>
     </div>
 
+    <!-- STAFF LOGIN BLOCK -->
     <div id="staffBlock" style="display:none">
       <label class="small">Staff</label>
       <select id="staffUser"></select>
       <button id="staffLoginBtn">Sign in (Staff)</button>
     </div>
 
-    <p class="muted" style="margin-top:8px">After login, admin goes to <code>admin.html</code>, staff to <code>staff.html</code>.</p>
+    <p class="muted" style="margin-top:8px">After login, admin goes to <code>admin.html</code>, staff goes to <code>staff.html</code>.</p>
   </div>
 
 <script>
-  // Ensure staff list
-  if(!localStorage.getItem('staffList')) localStorage.setItem('staffList', JSON.stringify(['Raj','Kumar','Sita']));
+/* =======================================================
+   STAFF LIST NORMALIZATION  — FIXES [object Object]
+========================================================= */
+function normalizeStaffList() {
+  let stored = localStorage.getItem("staffList");
+  let list = [];
 
-  // Ensure adminPin exists (default 4321)
-  if(!localStorage.getItem('adminPin')) localStorage.setItem('adminPin', '4321');
+  try {
+    list = JSON.parse(stored || "[]");
 
-  const roleEl = document.getElementById('role');
-  const adminBlock = document.getElementById('adminBlock');
-  const staffBlock = document.getElementById('staffBlock');
-  const staffSelect = document.getElementById('staffUser');
+    // If stored as: ["Raj","Sita"]
+    if (Array.isArray(list) && typeof list[0] === "string") {
+      list = list.map(n => ({ name: n, category: "Housekeeping" }));
+    }
 
-  function refreshStaffSelect(){
-    const staff = JSON.parse(localStorage.getItem('staffList')||'[]');
-    staffSelect.innerHTML = staff.map(s => `<option value="${s}">${s}</option>`).join('');
+    // Ensure objects always contain name+category
+    if (Array.isArray(list)) {
+      list = list.map(s => ({
+        name: s.name || String(s),
+        category: s.category || "Housekeeping"
+      }));
+    }
+  } catch (e) {
+    console.warn("Invalid staff list. Resetting.");
+    list = [];
   }
-  refreshStaffSelect();
 
-  roleEl.addEventListener('change', () => {
-    if(roleEl.value === 'admin'){
-      adminBlock.style.display = 'block';
-      staffBlock.style.display = 'none';
-    } else {
-      adminBlock.style.display = 'none';
-      staffBlock.style.display = 'block';
-    }
-  });
+  localStorage.setItem("staffList", JSON.stringify(list));
+  return list;
+}
 
-  document.getElementById('adminLoginBtn').addEventListener('click', () => {
-    const entered = document.getElementById('adminPin').value.trim();
-    const stored = localStorage.getItem('adminPin') || '4321';
-    if(entered === stored){
-      localStorage.setItem('adminAuth', 'true'); // admin authenticated flag
-      alert('Admin authenticated');
-      location.href = 'admin.html';
-    } else {
-      alert('Invalid PIN');
-    }
-  });
+normalizeStaffList();
 
-  // Allow admin to set a new PIN (will override)
-  document.getElementById('setPinBtn').addEventListener('click', () => {
-    const newPin = prompt('Enter NEW PIN (4 digits):','');
-    if(!newPin) return;
-    if(!/^\d{4,6}$/.test(newPin)){ alert('PIN should be 4-6 digits'); return; }
-    localStorage.setItem('adminPin', newPin);
-    alert('Admin PIN updated');
-  });
+/* =======================================================
+   ENSURE DEFAULT ADMIN PIN
+========================================================= */
+if (!localStorage.getItem("adminPin")) {
+  localStorage.setItem("adminPin", "4321");
+}
 
-  document.getElementById('staffLoginBtn').addEventListener('click', () => {
-    const staff = staffSelect.value;
-    if(!staff){ alert('Choose staff'); return; }
-    localStorage.setItem('staffAuth', JSON.stringify({name: staff}));
-    location.href = 'staff.html';
-  });
+/* =======================================================
+   LOAD STAFF DROPDOWN (FIXED)
+========================================================= */
+function loadStaffDropdown() {
+  const staff = JSON.parse(localStorage.getItem("staffList") || "[]");
+  const staffSelect = document.getElementById("staffUser");
+
+  if (!staff.length) {
+    staffSelect.innerHTML = `<option>No staff available</option>`;
+    return;
+  }
+
+  staffSelect.innerHTML = staff
+    .map(s => `<option value="${s.name}">${s.name} (${s.category})</option>`)
+    .join("");
+}
+
+loadStaffDropdown();
+
+/* =======================================================
+   ROLE SWITCH
+========================================================= */
+const roleEl = document.getElementById("role");
+roleEl.addEventListener("change", () => {
+  if (roleEl.value === "admin") {
+    document.getElementById("adminBlock").style.display = "block";
+    document.getElementById("staffBlock").style.display = "none";
+  } else {
+    document.getElementById("staffBlock").style.display = "block";
+    document.getElementById("adminBlock").style.display = "none";
+    loadStaffDropdown();
+  }
+});
+
+/* =======================================================
+   ADMIN LOGIN
+========================================================= */
+document.getElementById("adminLoginBtn").addEventListener("click", () => {
+  const entered = document.getElementById("adminPin").value.trim();
+  const actual = localStorage.getItem("adminPin");
+
+  if (entered === actual) {
+    localStorage.setItem("adminAuth", "true");
+    location.href = "admin.html";
+  } else {
+    alert("Invalid PIN");
+  }
+});
+
+/* SET NEW PIN */
+document.getElementById("setPinBtn").addEventListener("click", () => {
+  const newPin = prompt("Enter NEW PIN (4–6 digits):");
+  if (!newPin) return;
+
+  if (!/^\d{4,6}$/.test(newPin)) {
+    alert("PIN must be 4–6 digits");
+    return;
+  }
+
+  localStorage.setItem("adminPin", newPin);
+  alert("PIN updated successfully!");
+});
+
+/* =======================================================
+   STAFF LOGIN
+========================================================= */
+document.getElementById("staffLoginBtn").addEventListener("click", () => {
+  const selected = document.getElementById("staffUser").value;
+
+  if (!selected || selected === "No staff available") {
+    alert("Select a staff member");
+    return;
+  }
+
+  localStorage.setItem("staffAuth", JSON.stringify({ name: selected }));
+  location.href = "staff.html";
+});
 </script>
+
 </body>
 </html>
