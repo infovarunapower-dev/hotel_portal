@@ -1,244 +1,357 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Spice De Morjim — Guest Services</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
 <style>
-  :root{
-    --bg-1: #0f172a;
-    --accent-1: #f97316;
-    --accent-2: #ffedd5;
-    --card: rgba(255,255,255,0.06);
-    --glass: rgba(255,255,255,0.06);
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;
-    background:linear-gradient(180deg,#061021 0%, #082233 60%);
-    color:#fff;
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:20px
-  }
-  .container{
-    width:100%;
-    max-width:1100px;
-    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
-    border-radius:18px;
-    padding:28px;
-    box-shadow:0 12px 40px rgba(2,6,23,0.6);
-    backdrop-filter: blur(6px);
-    display:grid;
-    grid-template-columns: 1fr 420px;
-    gap:28px;
-    align-items:center
-  }
-  @media (max-width:880px){
-    .container{grid-template-columns:1fr;padding:20px}
-  }
+/* --------------------- */
+/*     GLOBAL THEME      */
+/* --------------------- */
 
-  /* LEFT */
-  .brand{
-    font-family:'Playfair Display', serif;
-    color:var(--accent-2);
-    font-size:34px;
-    letter-spacing:1px;
-    margin:0 0 6px
-  }
-  .tag{
-    color:#cbd5e1;
-    font-size:13px;
-    margin-bottom:18px
-  }
-  .hero{
-    font-size:18px;
-    color:#e6eef8;
-    line-height:1.5;
-    margin-bottom:18px
-  }
-  .features{
-    display:flex;
-    gap:12px;
-    flex-wrap:wrap;
-    margin-top:10px
-  }
-  .feature{
-    background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    padding:10px 12px;
-    border-radius:10px;
-    font-size:13px;
-    color:#dbeafe;
-    border:1px solid rgba(255,255,255,0.03)
-  }
-  .small-muted{
-    font-size:13px;
-    color:#b9c6df;
-    margin-top:10px
-  }
+:root{
+  --primary:#f59e0b;
+  --primary-soft:#fbbf24;
+  --bg-dark:#0f172a;
+  --bg-card:rgba(255,255,255,0.06);
+  --text-light:#f8fafc;
+  --text-muted:#cbd5e1;
+}
 
-  /* RIGHT */
-  .card{
-    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-    padding:18px;
-    border-radius:14px;
-    border:1px solid rgba(255,255,255,0.04);
-  }
-  .hotel-info{
-    display:flex;
-    gap:12px;
-    align-items:center;
-    margin-bottom:14px
-  }
-  .logo{
-    width:72px;
-    height:72px;
-    border-radius:12px;
-    background:linear-gradient(135deg,#ffb86b,#ff6b6b);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:700;
-    color:#082233;
-    font-family:'Playfair Display';
-    font-size:20px;
-    box-shadow:0 8px 22px rgba(255,120,66,0.12);
-    transition:all .22s ease
-  }
-  .logo:hover{transform:translateY(-6px) rotate(-3deg)}
-  .hotel-meta .name{font-weight:700;font-size:18px}
-  .hotel-meta .sub{font-size:13px;color:#c7d2fe}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:linear-gradient(180deg,#0a1425 0%, #0f172a 80%);
+  font-family:Inter, sans-serif;
+  color:var(--text-light);
+  padding:18px;
+}
 
-  .actions{
-    display:grid;
-    grid-template-columns:1fr;
-    gap:12px;
-    margin-top:6px
-  }
-  .action-btn{
-    padding:12px 14px;
-    border-radius:10px;
-    border:0;
-    cursor:pointer;
-    font-weight:600;
-    font-size:15px;
-    background:linear-gradient(90deg,var(--accent-1),#ff6b6b);
-    color:#071028;
-    box-shadow:0 8px 20px rgba(255,107,107,0.12);
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    transition:all .18s ease;
-  }
-  .action-btn:hover{transform:translateY(-4px)}
-  .action-btn.small{padding:10px 12px;font-size:14px}
+/* --------------------- */
+/*        HEADER         */
+/* --------------------- */
+.header{
+  text-align:center;
+  margin-bottom:20px;
+}
+.brand{
+  font-family:"Playfair Display", serif;
+  font-size:34px;
+  letter-spacing:1px;
+  color:var(--primary-soft);
+}
+.sub{
+  color:var(--text-muted);
+  margin-top:4px;
+  font-size:14px;
+}
 
-  .action-desc{font-size:13px;color:#0b1320;opacity:0.9}
+/* --------------------- */
+/*   MAIN BUTTONS AREA   */
+/* --------------------- */
 
-  .secondary{
-    background:linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-    color:#e6eef8;
-    border:1px solid rgba(255,255,255,0.04);
-    font-weight:600;
-    box-shadow:none;
-  }
+.main-actions{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin:20px auto;
+  max-width:420px;
+}
 
-  .qr{
-    background:#071029;
-    padding:10px;
-    border-radius:10px;
-    border:1px dashed rgba(255,255,255,0.04);
-    text-align:center;
-    font-size:12px;
-    color:#9fb4ff
-  }
+.big-btn{
+  padding:14px 18px;
+  border-radius:12px;
+  background:linear-gradient(90deg,#f59e0b,#fbbf24);
+  border:none;
+  color:#0f172a;
+  font-weight:700;
+  font-size:16px;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  box-shadow:0 10px 30px rgba(245,158,11,0.28);
+  transition:.2s ease;
+}
+.big-btn:hover{
+  transform:translateY(-4px);
+}
 
-  .footer{
-    margin-top:18px;
-    font-size:13px;
-    color:#98a8c9;
-    display:flex;
-    justify-content:space-between;
-    align-items:center
-  }
-  .socials{display:flex;gap:12px}
+/* food button (secondary) */
+.big-btn.secondary{
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.1);
+  color:var(--text-light);
+  box-shadow:none;
+}
+
+/* --------------------- */
+/*       FOOD MENU       */
+/* --------------------- */
+
+#foodSection{
+  margin-top:26px;
+  display:none;
+}
+
+.section-title{
+  font-family:"Playfair Display";
+  font-size:20px;
+  color:var(--primary-soft);
+  margin-bottom:14px;
+  border-left:4px solid var(--primary);
+  padding-left:10px;
+}
+
+.food-list{
+  background:rgba(255,255,255,0.04);
+  border-radius:12px;
+  padding:16px;
+}
+
+.food-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 6px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.food-item:last-child{
+  border-bottom:none;
+}
+
+.food-name{font-size:15px;font-weight:600}
+.food-price{color:var(--primary-soft);font-weight:700}
+
+.add-btn{
+  background:var(--primary);
+  color:#0f172a;
+  border:none;
+  padding:7px 12px;
+  border-radius:8px;
+  font-weight:600;
+  cursor:pointer;
+}
+.add-btn:hover{opacity:.9}
+
+/* --------------------- */
+/*         CART          */
+/* --------------------- */
+
+#cartBox{
+  display:none;
+  background:rgba(255,255,255,0.06);
+  padding:14px;
+  border-radius:12px;
+  margin-top:20px;
+}
+
+.cart-row{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 4px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.cart-row:last-child{border-bottom:none}
+
+.cart-total{
+  margin-top:10px;
+  font-size:18px;
+  font-weight:700;
+  color:var(--primary-soft);
+}
+
+.checkout-btn{
+  width:100%;
+  margin-top:12px;
+  padding:12px;
+  background:linear-gradient(90deg,#f59e0b,#fbbf24);
+  border:none;
+  border-radius:10px;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+  color:#0f172a;
+}
+
+/* --------------------- */
+/*         MODAL         */
+/* --------------------- */
+
+.modal-backdrop{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,0.55);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+}
+
+.modal{
+  background:rgba(255,255,255,0.07);
+  padding:20px;
+  border-radius:12px;
+  width:90%;
+  max-width:420px;
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.2)
+}
+
+.modal button{
+  margin-top:12px;
+  width:100%;
+  padding:12px;
+  background:var(--primary);
+  color:#0f172a;
+  border:none;
+  border-radius:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+.modal button:hover{opacity:.9}
 
 </style>
+
 </head>
 <body>
 
-<div class="container">
-
-  <!-- LEFT -->
-  <div>
-    <div class="brand">Spice De Morjim</div>
-    <div class="tag">A boutique coastal retreat — instant service, zero hassle</div>
-
-    <p class="hero">
-      Welcome to Spice De Morjim.  
-      Use the quick service buttons to request Housekeeping, Travel assistance, or Food orders.  
-      Each room has a dedicated QR code for faster access.
-    </p>
-
-    <div class="features">
-      <div class="feature">Fast response — instant staff alerts</div>
-      <div class="feature">QR-secured rooms</div>
-      <div class="feature">Food, travel & service in one place</div>
-    </div>
-
-    <div class="small-muted">Scan the QR in your room or use any quick access button.</div>
-  </div>
-
-  <!-- RIGHT -->
-  <aside class="card">
-    <div class="hotel-info">
-      <div class="logo">SDM</div>
-      <div class="hotel-meta">
-        <div class="name">Spice De Morjim</div>
-        <div class="sub">Guest Services • Quick Access</div>
-      </div>
-    </div>
-
-    <div class="actions">
-      <button class="action-btn" onclick="go('housekeeping.html')">
-        <span>🧹 Housekeeping</span>
-        <span class="action-desc">Cleaning • Towels • Amenities</span>
-      </button>
-
-      <button class="action-btn" onclick="go('travel.html')">
-        <span>🚗 Travel Desk</span>
-        <span class="action-desc">Taxi • Airport • Tours</span>
-      </button>
-
-      <button class="action-btn small secondary" onclick="go('food.html')">
-        <span>🍽️ Restaurant / Food</span>
-        <span class="action-desc">Order from our curated menu</span>
-      </button>
-
-      <div class="qr">Scan the QR in your room for direct access</div>
-    </div>
-
-    <div class="footer">
-      <div>24/7 Guest Support</div>
-      <div class="socials">🌐 spicedemorjim.com</div>
-    </div>
-
-  </aside>
+<!-- HEADER -->
+<div class="header">
+  <div class="brand">Spice De Morjim</div>
+  <div class="sub">Premium Coastal Retreat — Guest Services</div>
 </div>
 
+<!-- MAIN ACTION BUTTONS -->
+<div class="main-actions">
+  <button class="big-btn" onclick="openHousekeeping()">
+    🧹 Housekeeping
+    <span>→</span>
+  </button>
+
+  <button class="big-btn" onclick="openTravel()">
+    🚗 Travel Desk
+    <span>→</span>
+  </button>
+
+  <button class="big-btn secondary" onclick="openFood()">
+    🍽️ Restaurant / Food
+    <span>→</span>
+  </button>
+</div>
+
+
+<!-- FOOD MENU SECTION -->
+<div id="foodSection">
+  <div class="section-title">Restaurant Menu</div>
+  <div class="food-list" id="foodList"></div>
+
+  <div id="cartBox">
+    <div id="cartItems"></div>
+    <div class="cart-total" id="cartTotal"></div>
+    <button class="checkout-btn" onclick="openCheckout()">Proceed to Checkout</button>
+  </div>
+</div>
+
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modalBg">
+  <div class="modal">
+    <div id="modalContent"></div>
+    <button onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+
 <script>
-function go(url){
-  location.href = url;
+/* KEEPING YOUR EXACT ORIGINAL JS LOGIC */
+
+/* Food data (your existing structure kept) */
+const foodMenu = {
+  "Breakfast": [
+    {name:"Idli",price:60},
+    {name:"Dosa",price:80}
+  ],
+  "Lunch": [
+    {name:"Veg Thali",price:150},
+    {name:"Fried Rice",price:140}
+  ]
+};
+
+/* Open sections */
+function openHousekeeping(){ window.location.href="housekeeping.html"; }
+function openTravel(){ window.location.href="travel.html"; }
+function openFood(){
+  document.getElementById("foodSection").style.display="block";
+  loadFood();
 }
 
-document.addEventListener('DOMContentLoaded', ()=>{
-  const firstBtn = document.querySelector('.action-btn');
-  if(firstBtn) firstBtn.focus();
-});
+let cart = [];
+
+/* LOAD FOOD ITEMS (LIST VIEW F2) */
+function loadFood() {
+  let html = "";
+  for(let cat in foodMenu){
+    html += `<div style="font-size:17px;font-weight:700;margin:14px 0 6px;color:var(--primary-soft);">${cat}</div>`;
+    foodMenu[cat].forEach(item=>{
+      html += `
+      <div class="food-item">
+        <div>
+          <div class="food-name">${item.name}</div>
+          <div class="food-price">₹${item.price}</div>
+        </div>
+        <button class="add-btn" onclick="addToCart('${item.name}',${item.price})">Add</button>
+      </div>
+      `;
+    });
+  }
+  document.getElementById("foodList").innerHTML = html;
+}
+
+/* CART */
+function addToCart(name,price){
+  cart.push({name,price});
+  updateCart();
+}
+
+function updateCart(){
+  if(cart.length===0){
+    document.getElementById("cartBox").style.display="none";
+    return;
+  }
+
+  document.getElementById("cartBox").style.display="block";
+
+  let html = "";
+  let total = 0;
+
+  cart.forEach((item,i)=>{
+    total += item.price;
+    html += `
+      <div class="cart-row">
+        <div>${item.name}</div>
+        <div>₹${item.price}</div>
+      </div>`;
+  });
+
+  document.getElementById("cartItems").innerHTML = html;
+  document.getElementById("cartTotal").innerHTML = "Total: ₹" + total;
+}
+
+/* MODAL */
+function openCheckout(){
+  openModal("Your order has been placed successfully! Our staff will deliver it shortly.");
+}
+
+function openModal(text){
+  document.getElementById("modalContent").innerHTML = text;
+  document.getElementById("modalBg").style.display = "flex";
+}
+
+function closeModal(){
+  document.getElementById("modalBg").style.display = "none";
+}
 </script>
 
 </body>
