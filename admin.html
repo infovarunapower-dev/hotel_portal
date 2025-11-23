@@ -1,525 +1,343 @@
-
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>Admin Dashboard - Hotel Portal (Final)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <style>
-    :root{
-      --blue:#2563eb;
-      --muted:#6b7280;
-      --bg:#f3f6fb;
-      --sidebar:#ffffff;
-    }
-    *{box-sizing:border-box}
-    body{font-family:Arial;margin:0;background:var(--bg);color:#111}
-    header{background:var(--blue);color:#fff;padding:14px 20px;display:flex;align-items:center}
-    header .title{font-size:18px;font-weight:700}
-    .layout{display:flex;min-height:calc(100vh - 56px)}
-    .sidebar{
-      width:300px;background:var(--sidebar);padding:18px;
-      box-shadow: 6px 0 20px rgba(0,0,0,0.06);
-      border-right:1px solid #eef2f7;
-    }
-    .sidebar h3{margin:0 0 8px;font-size:16px}
-    .sb-item{padding:10px 12px;border-radius:8px;margin-bottom:8px;cursor:pointer;color:#1f2937}
-    .sb-item:hover{background:#eef2ff}
-    .sb-item.active{background:var(--blue);color:#fff}
-    .sb-section{font-size:13px;color:var(--muted);margin-top:14px;margin-bottom:8px}
-    .wrap{flex:1;padding:20px}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
-    .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-    .tab{padding:10px 14px;border-radius:8px;background:#e6eefc;color:var(--blue);cursor:pointer}
-    .tab.active{background:var(--blue);color:#fff}
-    input[type=text], input[type=number], select, textarea{padding:8px;border-radius:6px;border:1px solid #ddd}
-    table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.04)}
-    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;vertical-align:middle}
-    th{background:#fafbfd;color:var(--muted);font-weight:600}
-    .btn{padding:6px 10px;border-radius:6px;border:none;cursor:pointer;margin-left:6px}
-    .btn.assign{background:#10b981;color:#fff}
-    .btn.inprogress{background:#f59e0b;color:#fff}
-    .btn.complete{background:#16a34a;color:#fff}
-    .btn.ignore{background:#9ca3af;color:#fff}
-    .small{font-size:13px;color:var(--muted)}
-    .status-tag{padding:6px 8px;border-radius:6px;font-weight:600;color:#fff;display:inline-block}
-    .status-Pending{background:#6b7280}
-    .status-Assigned{background:#2563eb}
-    .status-In\ Progress{background:#f59e0b}
-    .status-Completed{background:#16a34a}
-    .status-Ignored{background:#9ca3af}
-    .select-staff{padding:6px;border-radius:6px}
-    .topbar{display:flex;align-items:center;gap:12px;width:100%}
-    a.link{color:#fff;text-decoration:underline;margin-left:12px}
-    .right{margin-left:auto}
-    .modal-backdrop{
-      position:fixed;inset:0;background:rgba(0,0,0,0.4);
-      display:none;align-items:center;justify-content:center;z-index:2000
-    }
-    .modal{
-      background:#fff;padding:18px;border-radius:10px;
-      max-width:720px;width:95%;box-shadow:0 12px 30px rgba(0,0,0,0.12)
-    }
-    .modal h3{margin-top:0}
-    .form-row{margin-bottom:10px}
-    .small-muted{font-size:13px;color:#555}
-    .cards{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap}
-    .card{background:white;padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.05);min-width:140px;flex:1}
-    .perf-list{background:#fff;padding:10px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.04);margin-top:10px}
-    .summary-small{font-size:12px;color:var(--muted)}
-    .summary-num{font-size:20px;font-weight:700}
-    @media (max-width:900px){ .layout{flex-direction:column} .sidebar{width:100%;} .cards{flex-direction:column} }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin Dashboard – Clean UI</title>
+
+<style>
+/* ==== BASE ==== */
+*{box-sizing:border-box;font-family:Inter,Arial;margin:0;padding:0}
+body{background:#f4f6fa;color:#1e293b;font-size:14px}
+
+/* ==== HEADER ==== */
+header{
+  background:#2563eb;color:#fff;height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px;position:sticky;top:0;z-index:50;
+}
+header .left{font-weight:700;font-size:16px}
+header a{color:#fff;text-decoration:none;font-size:13px;margin-left:14px}
+
+/* ==== LAYOUT ==== */
+.layout{display:flex;min-height:calc(100vh - 52px)}
+
+/* ==== SIDEBAR ==== */
+.sidebar{
+  width:210px;background:#fff;border-right:1px solid #e5e7eb;
+  padding:14px 12px;display:flex;flex-direction:column;gap:4px;
+}
+.sidebar h3{
+  font-size:13px;font-weight:700;color:#64748b;margin-bottom:8px
+}
+.sb-item{
+  padding:10px 12px;border-radius:6px;cursor:pointer;
+  display:flex;align-items:center;gap:8px;font-size:13.5px;
+  color:#334155;
+}
+.sb-item:hover{background:#f1f5f9}
+.sb-item.active{background:#2563eb;color:#fff}
+#quickstats{font-size:12px;color:#64748b;margin-top:auto;padding-top:8px}
+
+/* ==== MAIN ==== */
+main{flex:1;padding:16px}
+
+/* ==== FILTER BAR ==== */
+.filters{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px
+}
+.filters input, .filters select{
+  padding:7px 10px;border-radius:6px;border:1px solid #d0d7e2;
+  background:#fff;font-size:13px
+}
+.filters input{width:200px}
+
+/* ==== CARDS ==== */
+.cards{
+  display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap
+}
+.card{
+  background:#fff;padding:12px;border-radius:8px;flex:1;min-width:120px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.04)
+}
+.card .label{font-size:11px;color:#64748b;text-transform:uppercase}
+.card .num{font-size:18px;font-weight:700;margin-top:4px}
+
+/* ==== TABLE ==== */
+.table-box{
+  background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0
+}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{
+  background:#f8fafc;padding:10px;color:#64748b;font-weight:600;
+  border-bottom:1px solid #e2e8f0
+}
+tbody td{
+  padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle
+}
+tbody tr:hover td{background:#f8fafc}
+
+/* ==== BADGES ==== */
+.status{
+  font-size:11px;font-weight:700;padding:5px 8px;border-radius:999px;color:#fff
+}
+.Pending{background:#6b7280}
+.Assigned{background:#2563eb}
+["In Progress"]{background:#f59e0b}
+.Completed{background:#16a34a}
+.Ignored{background:#94a3b8}
+
+/* ==== ACTIONS ==== */
+.action-wrap{display:flex;gap:6px;flex-wrap:wrap}
+.action-wrap select{
+  padding:6px;border-radius:6px;border:1px solid #d0d7e2;font-size:12px
+}
+.btn{
+  padding:6px 10px;border:0;border-radius:6px;font-size:12px;color:#fff;
+  cursor:pointer
+}
+.btn-assign{background:#10b981}
+.btn-start{background:#f59e0b}
+.btn-complete{background:#16a34a}
+.btn-ignore{background:#64748b}
+
+/* ==== RESPONSIVE ==== */
+@media (max-width:900px){
+  .sidebar{display:none}
+  main{padding:12px}
+}
+</style>
 </head>
+
 <body>
-  <header>
-    <div class="topbar">
-      <div class="title">Admin Dashboard</div>
-      <div class="right small">
-        Signed in as: <strong>Admin</strong>
-        <a class="link" href="index.html">Home</a>
-        <a class="link" href="login.html" id="logoutLink">Logout</a>
-      </div>
+
+<header>
+  <div class="left">Admin Dashboard</div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="login.html">Logout</a>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h3>ADMIN MENU</h3>
+
+    <div class="sb-item" data-go="analytics">📊 Analytics</div>
+    <div class="sb-item active" data-go="dashboard">📋 Dashboard</div>
+    <div class="sb-item" data-go="addstaff">➕ Add Staff</div>
+    <div class="sb-item" data-go="addfood">🍽 Food Menu</div>
+    <div class="sb-item" data-go="settings">⚙ Settings</div>
+
+    <div id="quickstats">Requests: 0 • Assigned: 0 • Ignored: 0</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- FILTER BAR -->
+    <div class="filters">
+      <input id="search" placeholder="Search..."/>
+      <select id="staffFilter"><option value="">All Staff</option></select>
+      <select id="catFilter">
+        <option value="">All Categories</option>
+        <option>Housekeeping</option><option>Travel</option><option>Food</option>
+      </select>
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option>Pending</option><option>Assigned</option>
+        <option>In Progress</option><option>Completed</option><option>Ignored</option>
+      </select>
     </div>
-  </header>
 
-  <div class="layout">
-    <aside class="sidebar">
-      <h3>ADMIN MENU</h3>
+    <!-- CARDS -->
+    <div class="cards" id="cards"></div>
 
-      <!-- NEW ANALYTICS BUTTON -->
-      <div class="sb-item" data-action="analytics">📊 Analytics</div>
-
-      <!-- EXISTING MENU -->
-      <div class="sb-item active" data-action="dashboard">📋 Dashboard</div>
-      <div class="sb-item" data-action="assignments">🧾 Assignments</div>
-      <div class="sb-item" data-action="add-staff">➕ Add Staff</div>
-      <div class="sb-item" data-action="add-food">🍽 Add Food Menu</div>
-      <div class="sb-item" data-action="settings">⚙ Settings</div>
-
-      <div style="height:1px;background:#eef2f7;margin:12px 0"></div>
-      <div class="sb-item" id="logoutBtn">🔒 Logout</div>
-
-      <div class="sb-section">Quick stats</div>
-      <div class="small" id="statsArea">Requests: 0 · Assigned: 0 · Ignored: 0</div>
-    </aside>
-
-    <main class="wrap">
-      <div class="controls">
-        <div class="tabs" id="tabs">
-          <div class="tab active" data-cat="all">All</div>
-          <div class="tab" data-cat="Housekeeping">🧹 Housekeeping</div>
-          <div class="tab" data-cat="Travel">🚗 Travel</div>
-          <div class="tab" data-cat="Food">🍽️ Food</div>
-          <div class="tab" data-cat="Completed">✅ Completed</div>
-        </div>
-
-        <input type="text" id="searchInput" placeholder="Search..." style="flex:1"/>
-
-        <select id="filterStatus">
-          <option value="">All Status</option>
-          <option value="Pending">Pending</option>
-          <option value="Assigned">Assigned</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Completed">Completed</option>
-          <option value="Ignored">Ignored</option>
-        </select>
-
-        <select id="staffFilter">
-          <option value="">All Staff</option>
-        </select>
-
-        <select id="categoryFilter">
-          <option value="">All Categories</option>
-          <option value="Housekeeping">Housekeeping</option>
-          <option value="Travel">Travel</option>
-          <option value="Food">Food</option>
-        </select>
-
-        <button class="btn ignore" id="clearIgnoredBtn">Clear Ignored</button>
-      </div>
-
-      <div class="cards" id="dashboardCards" aria-live="polite"></div>
-
+    <!-- TABLE -->
+    <div class="table-box">
       <table id="reqTable">
         <thead>
           <tr>
-            <th>#</th><th>Category</th><th>Service / Summary</th><th>Guest</th>
-            <th>Room</th><th>Time</th><th>Status</th><th>Staff</th><th>Action</th>
+            <th>#</th><th>Category</th><th>Summary</th>
+            <th>Guest</th><th>Room</th><th>Time</th>
+            <th>Status</th><th>Staff</th><th>Action</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
+    </div>
 
-      <div class="perf-list" id="perfList">
-        <h4 style="margin:6px 0 8px">Staff Performance</h4>
-        <div id="perfRows"></div>
-      </div>
-    </main>
-  </div>
+  </main>
 
-  <!-- Modal -->
-  <div class="modal-backdrop" id="modalBackdrop">
-    <div class="modal" id="modalContent"></div>
-  </div>
-
+</div>
 
 <script>
-/* STORAGE HELPERS */
-function getRequests(){ return JSON.parse(localStorage.getItem('requests') || '[]'); }
-function setRequests(a){ localStorage.setItem('requests', JSON.stringify(a)); }
-
+/* ====================================================
+   UTIL STORAGE
+==================================================== */
+function getReq(){ return JSON.parse(localStorage.getItem("requests")||"[]"); }
+function setReq(d){ localStorage.setItem("requests",JSON.stringify(d)); }
 function getStaff(){
-  let raw = localStorage.getItem('staffList');
-  if(!raw){
-    const defaults = [
-      {name:'Raj',category:'Housekeeping'},
-      {name:'Kumar',category:'Housekeeping'},
-      {name:'Sita',category:'Housekeeping'}
-    ];
-    localStorage.setItem('staffList', JSON.stringify(defaults));
-    return defaults;
-  }
-  try{
-    const parsed = JSON.parse(raw);
-    if(parsed.length && typeof parsed[0]==="string"){
-      const migrated = parsed.map(s=>({name:s,category:'Housekeeping'}));
-      localStorage.setItem('staffList', JSON.stringify(migrated));
-      return migrated;
-    }
-    return parsed.map(s=>({name:s.name,category:s.category||'Housekeeping'}));
-  }catch(e){
-    return [];
-  }
+  let s=JSON.parse(localStorage.getItem("staffList")||"[]");
+  return s.map(x => ({name:x.name,category:x.category||"Housekeeping"}));
 }
-function setStaff(a){ localStorage.setItem('staffList', JSON.stringify(a)); }
-function getFood(){ return JSON.parse(localStorage.getItem('foodMenu') || '{}'); }
-function setFood(o){ localStorage.setItem('foodMenu', JSON.stringify(o)); }
+function setStaff(a){ localStorage.setItem("staffList",JSON.stringify(a)); }
 
-/* MODAL */
-const modalBackdrop=document.getElementById("modalBackdrop");
-const modalContent=document.getElementById("modalContent");
-function openModal(html){ modalContent.innerHTML=html; modalBackdrop.style.display="flex"; }
-function closeModal(){ modalBackdrop.style.display="none"; modalContent.innerHTML=""; }
-modalBackdrop.addEventListener("click",e=>{ if(e.target===modalBackdrop) closeModal(); });
-
-/* STATUS TAG */
-function statusTag(s){ return `<span class="status-tag status-${s.replace(/ /g,'-')}">${s}</span>`; }
-
-function updateStats(){
-  const all=getRequests();
-  const assigned=all.filter(r=>r.status==="Assigned").length;
-  const ignored=all.filter(r=>r.status==="Ignored").length;
-  document.getElementById("statsArea").innerText =
-    `Requests: ${all.length} · Assigned: ${assigned} · Ignored: ${ignored}`;
+/* ====================================================
+   INIT FILTERS
+==================================================== */
+function loadStaffFilter(){
+  const out = getStaff().map(s => 
+    `<option value="${s.name}">${s.name} (${s.category})</option>`
+  ).join("");
+  document.getElementById("staffFilter").innerHTML =
+    `<option value="">All Staff</option>${out}`;
 }
+loadStaffFilter();
 
-/* DASHBOARD CARDS */
-function renderDashboardCards(){
-  const all=getRequests();
-  const pending=all.filter(r=>r.status==="Pending").length;
-  const inprog=all.filter(r=>r.status==="In Progress").length;
-  const comp=all.filter(r=>r.status==="Completed").length;
-  const ign=all.filter(r=>r.status==="Ignored").length;
+/* ====================================================
+   RENDER CARDS
+==================================================== */
+function renderCards(){
+  const r=getReq();
+  const pending=r.filter(x=>x.status==="Pending").length;
+  const assigned=r.filter(x=>x.status==="Assigned").length;
+  const prog=r.filter(x=>x.status==="In Progress").length;
+  const comp=r.filter(x=>x.status==="Completed").length;
+  const ign=r.filter(x=>x.status==="Ignored").length;
 
-  document.getElementById("dashboardCards").innerHTML = `
-    <div class="card"><div class="summary-small">Total</div><div class="summary-num">${all.length}</div></div>
-    <div class="card"><div class="summary-small">Pending</div><div class="summary-num">${pending}</div></div>
-    <div class="card"><div class="summary-small">In Progress</div><div class="summary-num">${inprog}</div></div>
-    <div class="card"><div class="summary-small">Completed</div><div class="summary-num">${comp}</div></div>
-    <div class="card"><div class="summary-small">Ignored</div><div class="summary-num">${ign}</div></div>
+  document.getElementById("quickstats").innerText=
+    `Requests: ${r.length} • Assigned: ${assigned} • Ignored: ${ign}`;
+
+  document.getElementById("cards").innerHTML = `
+    <div class="card"><div class="label">Total</div><div class="num">${r.length}</div></div>
+    <div class="card"><div class="label">Pending</div><div class="num">${pending}</div></div>
+    <div class="card"><div class="label">Assigned</div><div class="num">${assigned}</div></div>
+    <div class="card"><div class="label">In Progress</div><div class="num">${prog}</div></div>
+    <div class="card"><div class="label">Completed</div><div class="num">${comp}</div></div>
+    <div class="card"><div class="label">Ignored</div><div class="num">${ign}</div></div>
   `;
 }
 
-/* STAFF PERFORMANCE */
-function renderPerf(){
-  const all=getRequests();
-  const staff=getStaff();
-  const perf = staff.map(s=>{
-    const handled = all.filter(r=>r.assigned_to===s.name).length;
-    const completed = all.filter(r=>r.assigned_to===s.name && r.status==='Completed').length;
-    return {
-      name:s.name, 
-      category:s.category, 
-      handled, 
-      completed, 
-      rate: handled? Math.round(completed/handled*100) : 0
-    };
-  });
-  document.getElementById("perfRows").innerHTML = perf.map(p=>`
-    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee">
-      <div><b>${p.name}</b><br><span class="small-muted">${p.category}</span></div>
-      <div style="text-align:right">
-        <div class="small-muted">Handled: ${p.handled}</div>
-        <div class="small-muted">Completed: ${p.completed}</div>
-        <div class="small-muted">Done: ${p.rate}%</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-/* MAIN TABLE RENDER WITH CONDITIONAL ACTION BUTTONS */
-function render(){
-  const all=getRequests();
+/* ====================================================
+   TABLE RENDER
+==================================================== */
+function renderTable(){
+  const r=getReq();
   const body=document.querySelector("#reqTable tbody");
-  body.innerHTML='';
+  const q=document.getElementById("search").value.toLowerCase();
+  const sf=document.getElementById("staffFilter").value;
+  const cf=document.getElementById("catFilter").value;
+  const st=document.getElementById("statusFilter").value;
 
-  const tab=document.querySelector(".tab.active").dataset.cat;
-  const search=document.getElementById("searchInput").value.toLowerCase();
-  const statusFilter=document.getElementById("filterStatus").value;
-  const staffFilter=document.getElementById("staffFilter").value;
-  const categoryFilter=document.getElementById("categoryFilter").value;
+  body.innerHTML="";
 
-  const filtered = all.filter(r=>{
-    if(tab==="Completed" && r.status!=="Completed") return false;
-    if(tab!=="all" && tab!=="Completed" && r.type!==tab) return false;
-    if(statusFilter && r.status!==statusFilter) return false;
-    if(staffFilter && r.assigned_to!==staffFilter) return false;
-    if(categoryFilter && r.type!==categoryFilter) return false;
-    if(search && !JSON.stringify(r).toLowerCase().includes(search)) return false;
-    return true;
-  });
+  r.slice().reverse().forEach((x,idx)=>{
+    if(q && !JSON.stringify(x).toLowerCase().includes(q)) return;
+    if(sf && x.assigned_to!==sf) return;
+    if(cf && x.type!==cf) return;
+    if(st && x.status!==st) return;
 
-  filtered.slice().reverse().forEach((r,i)=>{
-    const idx = all.length-1-i;
-    const summary = `${r.service || '-'}${r.details? ' — '+ (r.details.length>60? r.details.slice(0,60)+'...': r.details): ''}`;
-    const staffList = getStaff().filter(s=>s.category===r.type);
+    const i=r.length-idx;
 
-    let actionsHTML = '';
+    let act="";
+    const cleanType = (x.type||"").toLowerCase();
+    const staffList = getStaff().filter(
+      s => s.category.toLowerCase() === cleanType
+    );
 
-    if(!r.assigned_to || r.status==='Pending' || r.status==='Ignored'){
-      actionsHTML += `<select class="select-staff" data-idx="${idx}">
-                        <option value="">Assign staff</option>
-                        ${staffList.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}
-                      </select>`;
-      actionsHTML += `<button class="btn assign" data-assign="${idx}">Assign</button>`;
-    }
-
-    else if(r.status==='Assigned'){
-      actionsHTML += `<button class="btn inprogress" data-inprogress="${idx}">Start</button>`;
-      actionsHTML += `<button class="btn ignore" data-ignore="${idx}">Ignore</button>`;
-    }
-
-    else if(r.status==='In Progress'){
-      actionsHTML += `<button class="btn complete" data-complete="${idx}">Complete</button>`;
-      actionsHTML += `<button class="btn ignore" data-ignore="${idx}">Ignore</button>`;
-    }
-
-    else if(r.status==='Completed'){
-      actionsHTML += `<span class="small-muted">—</span>`;
+    if(!x.assigned_to || x.status==="Pending" || x.status==="Ignored"){
+      let opts = staffList.map(s=>`<option>${s.name}</option>`).join("");
+      act = `
+        <select class="as" data-i="${i}">
+          <option value="">Assign staff</option>${opts}
+        </select>
+        <button class="btn btn-assign" data-assign="${i}">Assign</button>
+      `;
+    } else if(x.status==="Assigned"){
+      act = `
+        <button class="btn btn-start" data-start="${i}">Start</button>
+        <button class="btn btn-ignore" data-ignore="${i}">Ignore</button>
+      `;
+    } else if(x.status==="In Progress"){
+      act = `
+        <button class="btn btn-complete" data-complete="${i}">Complete</button>
+        <button class="btn btn-ignore" data-ignore="${i}">Ignore</button>
+      `;
+    } else {
+      act = `<span style="font-size:12px;color:#64748b">—</span>`;
     }
 
     body.innerHTML += `
       <tr>
-        <td>${idx+1}</td>
-        <td>${r.type}</td>
-        <td><div style="font-weight:600">${summary}</div></td>
-        <td>${r.name||'-'}</td>
-        <td>${r.room||'-'}</td>
-        <td>${r.time||''}</td>
-        <td>${statusTag(r.status)}</td>
-        <td>${r.assigned_to? r.assigned_to + '<div class="small-muted">'+ (getStaff().find(s=>s.name===r.assigned_to)?.category||'') +'</div>' : '-'}</td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${actionsHTML}</td>
+        <td>${i}</td>
+        <td>${x.type}</td>
+        <td><b>${x.service||"-"}</b> ${x.details?("— "+x.details):""}</td>
+        <td>${x.name||"Guest"}</td>
+        <td>${x.room}</td>
+        <td>${x.time}</td>
+        <td><span class="status ${x.status}">${x.status}</span></td>
+        <td>${x.assigned_to||"-"}</td>
+        <td class="action-wrap">${act}</td>
       </tr>
     `;
   });
 
-  updateStats();
-  renderDashboardCards();
-  renderPerf();
+  renderCards();
 }
 
-/* ACTION HANDLERS */
-document.addEventListener("click", e=>{
-  const all=getRequests();
-  const target=e.target;
+/* ====================================================
+   ACTIONS
+==================================================== */
+document.addEventListener("click",e=>{
+  const r=getReq();
+  const t=e.target;
 
-  if(target.classList.contains('assign')){
-    const idx = +target.dataset.assign;
-    const sel = document.querySelector(`.select-staff[data-idx="${idx}"]`);
-    const staff = sel ? sel.value : '';
-    if(!staff) return alert('Select staff to assign');
-    all[idx].assigned_to = staff;
-    all[idx].status = 'Assigned';
-    setRequests(all); render();
+  // Assign
+  if(t.dataset.assign){
+    const idx = Number(t.dataset.assign)-1;
+    const sel=document.querySelector(`select.as[data-i="${idx+1}"]`);
+    if(!sel.value){alert("Select staff");return;}
+    r[idx].assigned_to = sel.value;
+    r[idx].status = "Assigned";
+    setReq(r); renderTable();
   }
 
-  if(target.classList.contains('inprogress')){
-    const idx = +target.dataset.inprogress;
-    all[idx].status = 'In Progress';
-    setRequests(all); render();
+  // Start
+  if(t.dataset.start){
+    const idx=Number(t.dataset.start)-1;
+    r[idx].status="In Progress";
+    setReq(r); renderTable();
   }
 
-  if(target.classList.contains('complete')){
-    const idx = +target.dataset.complete;
-    all[idx].status = 'Completed';
-    setRequests(all); render();
+  // Complete
+  if(t.dataset.complete){
+    const idx=Number(t.dataset.complete)-1;
+    r[idx].status="Completed";
+    setReq(r); renderTable();
   }
 
-  if(target.classList.contains('ignore')){
-    const idx = +target.dataset.ignore;
-    if(!confirm('Ignore this request?')) return;
-    all[idx].status = 'Ignored';
-    setRequests(all); render();
+  // Ignore
+  if(t.dataset.ignore){
+    const idx=Number(t.dataset.ignore)-1;
+    r[idx].status="Ignored";
+    setReq(r); renderTable();
   }
 });
 
-/* FILTERS & TABS */
-document.getElementById("tabs").onclick = e => {
-  if(e.target.classList.contains('tab')){
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    e.target.classList.add('active');
-    render();
-  }
-};
-document.getElementById("searchInput").oninput = render;
-document.getElementById("filterStatus").onchange = render;
-document.getElementById("staffFilter").onchange = render;
-document.getElementById("categoryFilter").onchange = render;
-
-/* SIDEBAR ACTIONS */
-document.querySelectorAll('.sb-item').forEach(item=>{
-  item.onclick = ()=>{
-    document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
-    item.classList.add('active');
-
-    const a = item.dataset.action;
-
-    if(a === 'analytics'){
-      location.href = 'analytics.html';
-    }
-    else if(a==='dashboard'){
-      document.querySelector('.tab[data-cat="all"]').click();
-      render();
-    }
-    else if(a==='assignments'){
-      document.querySelector('.tab[data-cat="all"]').click();
-      render();
-    }
-    else if(a==='add-staff'){
-      openAddStaff();
-    }
-    else if(a==='add-food'){
-      openAddFood();
-    }
-    else if(a==='settings'){
-      openSettings();
-    }
-  };
+/* ====================================================
+   FILTERS
+==================================================== */
+["search","staffFilter","catFilter","statusFilter"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",renderTable);
 });
 
-/* ADD STAFF */
-function openAddStaff(){
-  openModal(`
-    <h3>Add New Staff</h3>
-    <div class="form-row"><input id="newStaffName" placeholder="Name" /></div>
-    <div class="form-row">
-      <select id="newStaffCategory">
-        <option value="Housekeeping">Housekeeping</option>
-        <option value="Travel">Travel</option>
-        <option value="Food">Food</option>
-      </select>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="closeModal()" class="btn">Cancel</button>
-      <button onclick="addStaff()" class="btn assign">Add</button>
-    </div>
-  `);
-}
-
-function addStaff(){
-  const n=document.getElementById('newStaffName').value.trim();
-  const c=document.getElementById('newStaffCategory').value;
-
-  if(!n) return alert('Enter name');
-
-  let staff=getStaff();
-  if(staff.some(s=>s.name===n)) return alert('Staff exists');
-
-  staff.push({name:n,category:c});
-  setStaff(staff);
-  populateStaffFilter();
-  closeModal();
-}
-
-/* ADD FOOD */
-function openAddFood(){
-  openModal(`
-    <h3>Add Food Item</h3>
-    <input id="foodCategory" placeholder="Category" class="form-row"/>
-    <input id="foodName" placeholder="Item" class="form-row"/>
-    <input id="foodPrice" placeholder="Price" class="form-row"/>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="closeModal()" class="btn">Cancel</button>
-      <button onclick="addFoodItem()" class="btn assign">Add</button>
-    </div>
-  `);
-}
-function addFoodItem(){
-  let cat=document.getElementById('foodCategory').value.trim();
-  let n=document.getElementById('foodName').value.trim();
-  let p=document.getElementById('foodPrice').value.trim();
-
-  if(!cat||!n||!p) return alert('Fill all fields');
-
-  let menu=getFood();
-  if(!menu[cat]) menu[cat]=[];
-  menu[cat].push({name:n,price:p});
-
-  setFood(menu);
-  closeModal();
-}
-
-/* SETTINGS */
-function openSettings(){
-  openModal(`
-    <h3>Settings</h3>
-    <input id="setPin" placeholder="Set new PIN" class="form-row"/>
-    <p class="small-muted">Staff list: name:category,name2:category2</p>
-    <input id="setStaff" value="${getStaff().map(s=>s.name+':'+s.category).join(',')}" class="form-row"/>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="closeModal()" class="btn">Cancel</button>
-      <button onclick="saveSettings()" class="btn assign">Save</button>
-    </div>
-  `);
-}
-
-function saveSettings(){
-  const str=document.getElementById('setStaff').value.trim();
-  if(str){
-    const arr=str.split(',').map(i=>{
-      const [name,cat]=i.split(':');
-      return {name:name.trim(),category:(cat||'Housekeeping').trim()};
-    });
-    setStaff(arr);
-    populateStaffFilter();
-  }
-  closeModal();
-}
-
-/* LOGOUT */
-document.getElementById("logoutBtn").onclick=()=>{localStorage.removeItem("adminAuth");location.href="login.html"};
-document.getElementById("logoutLink").onclick=()=>localStorage.removeItem("adminAuth");
-
-/* STAFF FILTER FILLER */
-function populateStaffFilter(){
-  const s=getStaff();
-  const el=document.getElementById('staffFilter');
-  el.innerHTML = '<option value="">All Staff</option>' +
-    s.map(x=>`<option value="${x.name}">${x.name} — ${x.category}</option>`).join('');
-}
-populateStaffFilter();
-
-/* CLEAR IGNORED */
-document.getElementById('clearIgnoredBtn').onclick=()=>{
-  if(!confirm('Reset ignored items?')) return;
-  const a=getRequests();
-  a.forEach(r=>{ if(r.status==='Ignored') r.status='Pending'; });
-  setRequests(a); render();
-};
-
-/* INIT */
-render();
+/* ====================================================
+   INIT
+==================================================== */
+renderTable();
 </script>
 
 </body>
