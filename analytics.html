@@ -2,192 +2,216 @@
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>Analytics Dashboard - Hotel Portal</title>
+  <title>Analytics Dashboard - Hotel Portal (Updated)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <style>
-    body{
-      font-family:Arial;
-      margin:0;
-      background:#f4f6fb;
-      color:#111;
-    }
-    header{
-      background:#1f2937;
-      color:#fff;
-      padding:14px 20px;
-      display:flex;
-      align-items:center;
-    }
-    .wrap{
-      padding:20px;
-      max-width:1100px;
-      margin:0 auto;
-    }
-    .cards{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-bottom:16px;
-    }
-    .card{
-      background:#fff;
-      padding:14px;
-      border-radius:10px;
-      box-shadow:0 6px 18px rgba(0,0,0,0.04);
-      flex:1;
-      min-width:160px;
-    }
-    .summary-small{
-      font-size:12px;
-      color:#6b7280;
-    }
-    .summary-num{
-      font-size:22px;
-      font-weight:700;
-      margin-top:6px;
-    }
-    table{
-      width:100%;
-      border-collapse:collapse;
-      background:#fff;
-      border-radius:8px;
-      overflow:hidden;
-      box-shadow:0 4px 12px rgba(0,0,0,0.04);
-      margin-top:12px;
-    }
-    th,td{
-      padding:10px;
-      border-bottom:1px solid #eee;
-      text-align:left;
-    }
-    th{
-      background:#fafbfd;
-      color:#6b7280;
-    }
-    .btn{
-      padding:8px 10px;
-      border-radius:6px;
-      border:none;
-      cursor:pointer;
-      background:#2563eb;
-      color:#fff;
-    }
-    .filters{
-      display:flex;
-      gap:8px;
-      margin-bottom:12px;
-      align-items:center;
-    }
-    .small-muted{
-      font-size:13px;
-      color:#666;
-    }
-    .json-box{
-      background:#fff;
-      padding:12px;
-      border-radius:8px;
-      box-shadow:0 4px 12px rgba(0,0,0,0.03);
-      margin-top:12px;
-      white-space:pre-wrap;
-      font-family:monospace;
-      font-size:13px;
-      max-height:320px;
-      overflow:auto;
-    }
+    body{font-family:Arial;margin:0;background:#f4f6fb;color:#111}
+    header{background:#1f2937;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+    .wrap{padding:18px;max-width:1200px;margin:0 auto}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+    .btn{padding:8px 10px;border-radius:6px;border:none;cursor:pointer;background:#2563eb;color:#fff}
+    .btn.secondary{background:#10b981}
+    .cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+    .card{background:#fff;padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.04);flex:1;min-width:160px}
+    .summary-small{font-size:12px;color:#6b7280}
+    .summary-num{font-size:22px;font-weight:700;margin-top:6px}
+    .panel{background:#fff;padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.04);margin-bottom:12px}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.04)}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
+    th{background:#fafbfd;color:#6b7280}
+    .json-box{background:#fff;padding:12px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.03);margin-top:12px;white-space:pre-wrap;font-family:monospace;font-size:13px;max-height:320px;overflow:auto}
+    .filters{display:flex;gap:8px;align-items:center}
+    input[type="date"]{padding:6px;border-radius:6px;border:1px solid #ddd}
+    .small-muted{font-size:13px;color:#666}
+    @media (max-width:900px){ .grid-2{grid-template-columns:1fr} .cards{flex-direction:column} header{flex-direction:column;gap:8px;align-items:flex-start} }
   </style>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- SheetJS (xlsx) CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-
 <body>
-
-<header>
-  <div style="font-weight:700">Analytics Dashboard</div>
-</header>
-
-<div class="wrap">
-
-  <!-- Navigation -->
-  <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
-    <a href="admin_final.html" class="btn" style="background:#111827">← Back to Admin</a>
-    <div class="small-muted">Overview of requests and staff performance</div>
-  </div>
-
-  <!-- Top Cards -->
-  <div class="cards" id="topCards"></div>
-
-  <!-- Category-wise & Staff Performance -->
-  <div style="display:flex;gap:12px;flex-wrap:wrap">
-    
-    <!-- Category Stats -->
-    <div style="flex:1;min-width:300px">
-      <h3 style="margin:6px 0">Category-wise</h3>
-
-      <table id="catTable">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Received</th>
-            <th>Pending</th>
-            <th>Assigned</th>
-            <th>Completed</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+  <header>
+    <div style="display:flex;gap:12px;align-items:center">
+      <a href="admin.html" class="btn" id="backBtn" style="background:#111827">← Back to Admin</a>
+      <div style="font-weight:700;font-size:16px">Analytics Dashboard</div>
     </div>
 
-    <!-- Staff Performance -->
-    <div style="flex:1;min-width:300px">
-      <h3 style="margin:6px 0">Staff Performance</h3>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="small-muted">Export / view:</div>
+      <button class="btn" id="downloadExcelBtn">Export Excel</button>
+      <button class="btn" id="downloadJsonBtn">Download JSON</button>
+    </div>
+  </header>
 
+  <div class="wrap">
+
+    <!-- Filters -->
+    <div class="controls panel">
+      <div class="filters">
+        <label><input type="radio" name="range" value="today" /> Today</label>
+        <label><input type="radio" name="range" value="week" /> This Week</label>
+        <label><input type="radio" name="range" value="month" /> This Month</label>
+        <label><input type="radio" name="range" value="all" checked /> All Time</label>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+        <div class="small-muted">Custom:</div>
+        <input type="date" id="fromDate" />
+        <input type="date" id="toDate" />
+        <button id="applyCustom" class="btn">Apply</button>
+        <button id="refreshBtn" class="btn secondary">Refresh</button>
+      </div>
+    </div>
+
+    <!-- Top summary cards -->
+    <div class="cards" id="topCards"></div>
+
+    <!-- Charts and tables -->
+    <div class="grid-2">
+      <div class="panel">
+        <h4 style="margin:6px 0">Requests by Status</h4>
+        <canvas id="statusChart" height="220"></canvas>
+      </div>
+
+      <div class="panel">
+        <h4 style="margin:6px 0">Requests by Category</h4>
+        <canvas id="catChart" height="220"></canvas>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:12px">
+      <div class="panel">
+        <h4 style="margin:6px 0">Staff Completion %</h4>
+        <canvas id="staffChart" height="220"></canvas>
+      </div>
+
+      <div class="panel">
+        <h4 style="margin:6px 0">Category-wise Details</h4>
+        <table id="catTable">
+          <thead><tr><th>Category</th><th>Received</th><th>Pending</th><th>Assigned</th><th>Completed</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <h4 style="margin:6px 0">Staff Performance Table</h4>
       <table id="staffPerf">
-        <thead>
-          <tr>
-            <th>Staff</th>
-            <th>Category</th>
-            <th>Handled</th>
-            <th>Completed</th>
-            <th>Done %</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Staff</th><th>Category</th><th>Handled</th><th>Completed</th><th>Done %</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
 
-  </div>
-
-  <!-- JSON EXPORT -->
-  <div style="margin-top:18px;display:flex;justify-content:space-between;align-items:center">
-    <h3 style="margin:0">Raw JSON / Export</h3>
-    <div>
-      <button class="btn" id="downloadBtn">Download JSON</button>
-      <button class="btn" id="refreshBtn" style="background:#10b981">Refresh</button>
+    <div class="panel" style="margin-top:12px">
+      <h4 style="margin:6px 0">Raw JSON (filtered)</h4>
+      <div class="json-box" id="jsonBox"></div>
     </div>
   </div>
-
-  <div class="json-box" id="jsonBox"></div>
-
-</div>
 
 <script>
-/* Helpers */
-function getRequests(){ 
-  return JSON.parse(localStorage.getItem('requests') || '[]'); 
-}
+/* -----------------------------
+   Utilities & data helpers
+   ----------------------------- */
+function getRequests(){ return JSON.parse(localStorage.getItem('requests') || '[]'); }
 function getStaff(){ 
-  return JSON.parse(localStorage.getItem('staffList') || '[]'); 
+  try { return JSON.parse(localStorage.getItem('staffList') || '[]'); }
+  catch(e){ return []; }
 }
 
-/* Top Cards */
-function renderTopCards(){
-  const all=getRequests();
-  const total=all.length;
-  const pending=all.filter(r=>r.status==='Pending').length;
-  const assigned=all.filter(r=>r.status==='Assigned').length;
-  const inprog=all.filter(r=>r.status==='In Progress').length;
-  const completed=all.filter(r=>r.status==='Completed').length;
-  const ignored=all.filter(r=>r.status==='Ignored').length;
+/* Try to parse request time robustly.
+   We saved times with new Date().toLocaleString() previously -> locale text.
+   Prefer r.iso if present; else attempt Date.parse.
+*/
+function parseRequestDate(r){
+  if(!r) return null;
+  if(r.iso) return new Date(r.iso);
+  if(r.time){
+    // First try direct parse:
+    const d = new Date(r.time);
+    if(!isNaN(d)) return d;
+    // Try fallback with day/month/year heuristics - attempt split by non-digits:
+    const digits = r.time.match(/\d+/g);
+    if(digits && digits.length>=3){
+      // Try common formats: mm/dd/yyyy or dd/mm/yyyy - try both
+      const parts = digits.map(Number);
+      // If year has 4 digits assume it's last
+      let year = parts.find(p => p>31) || parts[2];
+      if(!year) year = (new Date()).getFullYear();
+      // Try constructing Date with ISO-ish
+      const tryIso = new Date(parts.slice(0,3).join('-'));
+      if(!isNaN(tryIso)) return tryIso;
+    }
+  }
+  return null;
+}
 
-  document.getElementById('topCards').innerHTML = `
+/* Filter requests by date range (inclusive).
+   from/to are Date objects or null.
+*/
+function filterByDateRange(reqs, from, to){
+  if(!from && !to) return reqs;
+  return reqs.filter(r=>{
+    const d = parseRequestDate(r);
+    if(!d) return false;
+    if(from && d < from) return false;
+    if(to && d > to) return false;
+    return true;
+  });
+}
+
+/* Convenience: start of today/week/month */
+function startOfToday(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+function startOfWeek(){ const d=new Date(); const day=d.getDay(); const diff = d.getDate() - day + (day===0?-6:1); d.setDate(diff); d.setHours(0,0,0,0); return d; }
+function startOfMonth(){ const d=new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; }
+
+/* -----------------------------
+   Main rendering logic
+   ----------------------------- */
+
+let charts = { status: null, cat: null, staff: null };
+
+function computeStats(filteredRequests){
+  const statusBuckets = {};
+  const categoryBuckets = { Housekeeping:[], Travel:[], Food:[] };
+  const staffMap = {}; // name -> {handled, completed, category}
+
+  // initialize staffMap with known staff
+  getStaff().forEach(s => {
+    staffMap[s.name] = { handled:0, completed:0, category: s.category || '' };
+  });
+
+  filteredRequests.forEach(r => {
+    const st = r.status || 'Pending';
+    statusBuckets[st] = (statusBuckets[st]||0) + 1;
+    const cat = r.type || 'Unknown';
+    if(!categoryBuckets[cat]) categoryBuckets[cat] = [];
+    categoryBuckets[cat].push(r);
+
+    if(r.assigned_to){
+      if(!staffMap[r.assigned_to]) staffMap[r.assigned_to] = { handled:0, completed:0, category: '' };
+      staffMap[r.assigned_to].handled++;
+      if(r.status === 'Completed') staffMap[r.assigned_to].completed++;
+    }
+  });
+
+  return { statusBuckets, categoryBuckets, staffMap };
+}
+
+function formatNumber(n){ return n==null?'-':n; }
+
+function renderTopCards(filtered){
+  const total = filtered.length;
+  const pending = filtered.filter(r => r.status==='Pending').length;
+  const assigned = filtered.filter(r => r.status==='Assigned').length;
+  const inprog = filtered.filter(r => r.status==='In Progress').length;
+  const completed = filtered.filter(r => r.status==='Completed').length;
+  const ignored = filtered.filter(r => r.status==='Ignored').length;
+
+  const container = document.getElementById('topCards');
+  container.innerHTML = `
     <div class="card"><div class="summary-small">Total Received</div><div class="summary-num">${total}</div></div>
     <div class="card"><div class="summary-small">Pending</div><div class="summary-num">${pending}</div></div>
     <div class="card"><div class="summary-small">Assigned</div><div class="summary-num">${assigned}</div></div>
@@ -197,85 +221,243 @@ function renderTopCards(){
   `;
 }
 
-/* Category Stats */
-function renderCategoryTable(){
-  const all=getRequests();
-  const cats=['Housekeeping','Travel','Food'];
-  const tbody = document.querySelector('#catTable tbody');
-  tbody.innerHTML='';
-
-  cats.forEach(cat=>{
-    const rows = all.filter(r=>r.type===cat);
-    tbody.innerHTML += `
-      <tr>
-        <td>${cat}</td>
-        <td>${rows.length}</td>
-        <td>${rows.filter(r=>r.status==='Pending').length}</td>
-        <td>${rows.filter(r=>r.status==='Assigned').length}</td>
-        <td>${rows.filter(r=>r.status==='Completed').length}</td>
-      </tr>
-    `;
+/* Draw Chart helper */
+function drawBarChart(ctx, labels, data, label, color){
+  if(!ctx) return null;
+  if(ctx._chartInstance){ ctx._chartInstance.destroy(); }
+  const chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: label,
+        data: data,
+        backgroundColor: color || 'rgba(37,99,235,0.8)'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { maxRotation: 45, minRotation:0 } },
+        y: { beginAtZero: true, precision:0 }
+      }
+    }
   });
+  ctx._chartInstance = chart;
+  return chart;
 }
 
-/* Staff Performance */
-function renderStaffPerf(){
-  const all=getRequests();
-  const staff = getStaff();
-  const tbody=document.querySelector('#staffPerf tbody');
-  tbody.innerHTML='';
+/* Render charts and tables using filtered requests */
+function renderAll(filteredRequests){
+  // Top cards
+  renderTopCards(filteredRequests);
 
-  staff.forEach(s=>{
-    const handled = all.filter(r=>r.assigned_to===s.name).length;
-    const completed = all.filter(r=>r.assigned_to===s.name && r.status==='Completed').length;
-    const percent = handled ? Math.round(completed / handled * 100) : 0;
+  // compute stats
+  const { statusBuckets, categoryBuckets, staffMap } = computeStats(filteredRequests);
 
-    tbody.innerHTML += `
-      <tr>
-        <td>${s.name}</td>
-        <td>${s.category}</td>
-        <td>${handled}</td>
-        <td>${completed}</td>
-        <td>${percent}%</td>
-      </tr>
-    `;
+  // Status chart
+  const statusLabels = Object.keys(statusBuckets).length ? Object.keys(statusBuckets) : ['Pending'];
+  const statusData = statusLabels.map(l => statusBuckets[l] || 0);
+  const statusCtx = document.getElementById('statusChart').getContext('2d');
+  charts.status = drawBarChart(statusCtx, statusLabels, statusData, 'Status', 'rgba(37,99,235,0.9)');
+
+  // Category chart
+  const catLabels = Object.keys(categoryBuckets);
+  const catData = catLabels.map(l => categoryBuckets[l] ? categoryBuckets[l].length : 0);
+  const catCtx = document.getElementById('catChart').getContext('2d');
+  charts.cat = drawBarChart(catCtx, catLabels, catData, 'Category', 'rgba(16,185,129,0.9)');
+
+  // Staff performance chart (top N staff)
+  const staffEntries = Object.entries(staffMap).map(([name, data])=>{
+    const rate = data.handled? Math.round(data.completed / data.handled * 100) : 0;
+    return { name, handled: data.handled, completed: data.completed, rate, category: data.category };
+  }).sort((a,b)=>b.handled - a.handled);
+  const topStaff = staffEntries.slice(0, 12);
+  const staffLabels = topStaff.map(s=>s.name);
+  const staffData = topStaff.map(s=>s.rate);
+  const staffCtx = document.getElementById('staffChart').getContext('2d');
+  charts.staff = drawBarChart(staffCtx, staffLabels, staffData, 'Completion %', 'rgba(99,102,241,0.9)');
+
+  // Category table
+  const catTbody = document.querySelector('#catTable tbody');
+  catTbody.innerHTML = '';
+  catLabels.forEach(cat=>{
+    const rows = categoryBuckets[cat] || [];
+    const received = rows.length;
+    const pending = rows.filter(r=>r.status==='Pending').length;
+    const assigned = rows.filter(r=>r.status==='Assigned').length;
+    const completed = rows.filter(r=>r.status==='Completed').length;
+    catTbody.innerHTML += `<tr><td>${cat}</td><td>${received}</td><td>${pending}</td><td>${assigned}</td><td>${completed}</td></tr>`;
   });
+
+  // Staff perf table
+  const staffTbody = document.querySelector('#staffPerf tbody');
+  staffTbody.innerHTML = '';
+  staffEntries.forEach(s=>{
+    staffTbody.innerHTML += `<tr>
+      <td>${s.name}</td>
+      <td>${s.category||''}</td>
+      <td>${s.handled}</td>
+      <td>${s.completed}</td>
+      <td>${s.rate}%</td>
+    </tr>`;
+  });
+
+  // JSON box
+  document.getElementById('jsonBox').innerText = JSON.stringify(filteredRequests, null, 2);
 }
 
-/* Raw JSON Box */
-function renderJSON(){
+/* -----------------------------
+   Date filter controls
+   ----------------------------- */
+function getFilteredRequests(){
   const all = getRequests();
-  document.getElementById('jsonBox').innerText = JSON.stringify(all, null, 2);
+
+  // check radio selection
+  const range = document.querySelector('input[name="range"]:checked')?.value || 'all';
+
+  let from = null, to = null;
+  if(range === 'today'){
+    from = startOfToday();
+    to = new Date(); // now
+  } else if(range === 'week'){
+    from = startOfWeek();
+    to = new Date();
+  } else if(range === 'month'){
+    from = startOfMonth();
+    to = new Date();
+  } else {
+    // all -> none by default
+  }
+
+  // check custom date inputs
+  const fromInput = document.getElementById('fromDate').value;
+  const toInput = document.getElementById('toDate').value;
+  if(fromInput){
+    const d = new Date(fromInput);
+    d.setHours(0,0,0,0);
+    from = d;
+  }
+  if(toInput){
+    const d2 = new Date(toInput);
+    d2.setHours(23,59,59,999);
+    to = d2;
+  }
+
+  // finally filter
+  return filterByDateRange(all, from, to);
 }
 
-/* Download JSON */
-document.getElementById('downloadBtn').onclick = ()=>{
-  const data = JSON.stringify(getRequests(), null, 2);
-  const blob = new Blob([data],{type:'application/json'});
+/* -----------------------------
+   Excel export using SheetJS
+   ----------------------------- */
+function exportToExcel(filteredRequests){
+  // Summary sheet
+  const total = filteredRequests.length;
+  const pending = filteredRequests.filter(r=>r.status==='Pending').length;
+  const assigned = filteredRequests.filter(r=>r.status==='Assigned').length;
+  const inprog = filteredRequests.filter(r=>r.status==='In Progress').length;
+  const completed = filteredRequests.filter(r=>r.status==='Completed').length;
+  const ignored = filteredRequests.filter(r=>r.status==='Ignored').length;
+
+  const summarySheet = [
+    ['Metric', 'Value'],
+    ['Total Received', total],
+    ['Pending', pending],
+    ['Assigned', assigned],
+    ['In Progress', inprog],
+    ['Completed', completed],
+    ['Ignored', ignored]
+  ];
+
+  // Category sheet
+  const cats = ['Housekeeping','Travel','Food'];
+  const categorySheet = [['Category','Received','Pending','Assigned','Completed']];
+  cats.forEach(cat=>{
+    const rows = filteredRequests.filter(r=>r.type===cat);
+    categorySheet.push([cat, rows.length, rows.filter(r=>r.status==='Pending').length, rows.filter(r=>r.status==='Assigned').length, rows.filter(r=>r.status==='Completed').length]);
+  });
+
+  // Staff sheet
+  const staff = getStaff();
+  const staffSheet = [['Staff','Category','Handled','Completed','Done %']];
+  staff.forEach(s=>{
+    const handled = filteredRequests.filter(r=>r.assigned_to===s.name).length;
+    const completedCount = filteredRequests.filter(r=>r.assigned_to===s.name && r.status==='Completed').length;
+    const rate = handled? Math.round(completedCount/handled*100) : 0;
+    staffSheet.push([s.name, s.category||'', handled, completedCount, rate]);
+  });
+
+  // Requests sheet (flatten)
+  const requestsSheet = [['#','Type','Service','Room','Guest','Status','Assigned To','Details','Time']];
+  filteredRequests.forEach((r,i)=>{
+    requestsSheet.push([i+1, r.type||'', r.service||'', r.room||'', r.name||'', r.status||'', r.assigned_to||'', r.details||'', r.time||'']);
+  });
+
+  // Build workbook
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.aoa_to_sheet(summarySheet);
+  const ws2 = XLSX.utils.aoa_to_sheet(categorySheet);
+  const ws3 = XLSX.utils.aoa_to_sheet(staffSheet);
+  const ws4 = XLSX.utils.aoa_to_sheet(requestsSheet);
+
+  XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Category');
+  XLSX.utils.book_append_sheet(wb, ws3, 'Staff');
+  XLSX.utils.book_append_sheet(wb, ws4, 'Requests');
+
+  // Write file
+  XLSX.writeFile(wb, 'hotel_requests_analytics.xlsx');
+}
+
+/* -----------------------------
+   Hook up UI events
+   ----------------------------- */
+document.getElementById('refreshBtn').addEventListener('click', ()=> {
+  const filtered = getFilteredRequests();
+  renderAll(filtered);
+});
+
+document.getElementById('applyCustom').addEventListener('click', ()=>{
+  // ensure radio 'all' is unchecked - but we'll just use custom inputs
+  const filtered = getFilteredRequests();
+  renderAll(filtered);
+});
+
+document.getElementById('downloadJsonBtn').addEventListener('click', ()=>{
+  const data = JSON.stringify(getFilteredRequests(), null, 2);
+  const blob = new Blob([data], {type:'application/json'});
   const url = URL.createObjectURL(blob);
-
-  const a=document.createElement('a');
-  a.href=url;
-  a.download='requests.json';
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'requests_filtered.json';
+  document.body.appendChild(a);
   a.click();
-
+  a.remove();
   URL.revokeObjectURL(url);
-};
+});
 
-/* Refresh Button */
-document.getElementById('refreshBtn').onclick = ()=> renderAll();
+document.getElementById('downloadExcelBtn').addEventListener('click', ()=>{
+  const filtered = getFilteredRequests();
+  exportToExcel(filtered);
+});
 
-/* Run All */
-function renderAll(){
-  renderTopCards();
-  renderCategoryTable();
-  renderStaffPerf();
-  renderJSON();
-}
+/* also make radio changes refresh */
+document.querySelectorAll('input[name="range"]').forEach(r=>{
+  r.addEventListener('change', ()=> {
+    const filtered = getFilteredRequests();
+    renderAll(filtered);
+  });
+});
 
-/* INIT */
-renderAll();
+/* init */
+(function init(){
+  // initial render (all time)
+  const filtered = getFilteredRequests();
+  renderAll(filtered);
+})();
 </script>
-
 </body>
 </html>
