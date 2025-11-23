@@ -340,6 +340,11 @@ function openRoomModal(opts){
     let room = $('roomInput').value.trim();
     if(!room) return alert('Enter room number');
     opts.onConfirm(room);
+
+    <!-- FOOTER -->
+  <footer class="text-center text-gray-700 text-sm mt-10">
+    © Spice De Morjim — All rights reserved.
+  </footer>
   };
 }
 
@@ -349,5 +354,6 @@ document.addEventListener('DOMContentLoaded', renderCart);
 
 </body>
 </html>
+
 
 
