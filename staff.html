@@ -1,11 +1,10 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 <title>Staff Dashboard</title>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 
-<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
@@ -13,9 +12,9 @@
   .tab-active { background:#2563eb; color:white; }
   .card { background:white; padding:14px; border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,0.08); margin-bottom:12px; }
   .status { padding:4px 7px; border-radius:6px; font-size:12px; color:white; font-weight:600; }
-  .Assigned { background:#2563eb; }
   .Pending { background:#6b7280; }
-  .InProgress { background:#f59e0b; }
+  .Assigned { background:#2563eb; }
+  .In\ Progress { background:#f59e0b; }
   .Completed { background:#16a34a; }
 </style>
 </head>
@@ -24,7 +23,6 @@
 
 <div class="max-w-3xl mx-auto">
 
-  <!-- Header -->
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-2xl font-bold">Staff Dashboard</h2>
     <div>
@@ -34,7 +32,7 @@
   </div>
 
   <p class="text-sm text-gray-600 mb-3">
-    Tasks assigned to you will appear here. Click any task to view full details.
+    Tasks assigned to you will appear here.
   </p>
 
   <!-- Tabs -->
@@ -45,39 +43,25 @@
     <div class="tab" data-tab="history">History</div>
   </div>
 
-  <!-- Task list -->
   <div id="taskList"></div>
-
 </div>
 
-<!-- MODAL -->
-<div id="modalBg"
-     class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+<!-- Modal -->
+<div id="modalBg" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
   <div id="modalBox" class="bg-white p-5 rounded-xl max-w-md w-11/12"></div>
 </div>
 
 <script>
-/* -------------------------------
-   STAFF LOGIN VALIDATION
--------------------------------- */
+/* LOGIN CHECK */
 const staffAuth = JSON.parse(localStorage.getItem("staffAuth") || "null");
-if (!staffAuth || !staffAuth.name){
-  alert("Please login as staff");
-  location.href = "login.html";
-}
-
+if (!staffAuth){ location.href = "login.html"; }
 document.getElementById("staffName").innerText = staffAuth.name;
 
-/* -------------------------------
-   LOAD TASKS
--------------------------------- */
-function getRequests(){
-  return JSON.parse(localStorage.getItem("requests") || "[]");
-}
+/* GET REQUESTS */
+function getRequests(){ return JSON.parse(localStorage.getItem("requests") || "[]"); }
+function saveRequests(r){ localStorage.setItem("requests", JSON.stringify(r)); }
 
-/* -------------------------------
-   TABS
--------------------------------- */
+/* TABS */
 let activeTab = "pending";
 document.querySelectorAll(".tab").forEach(tab=>{
   tab.onclick = ()=>{
@@ -88,139 +72,80 @@ document.querySelectorAll(".tab").forEach(tab=>{
   };
 });
 
-/* -------------------------------
-   RENDER TASKS
--------------------------------- */
+/* RENDER TASKS */
 function render(){
   const list = document.getElementById("taskList");
   list.innerHTML = "";
 
   const all = getRequests();
+  const my = all.map((task, index) => ({...task, index})) // keep index mapping
+                 .filter(t => t.assigned_to === staffAuth.name);
 
-  // Only tasks assigned to this staff
-  const mine = all.filter(r => r.assigned_to === staffAuth.name);
-
-  let filtered = [];
+  let filtered = my;
 
   if(activeTab === "pending"){
-    filtered = mine.filter(r => r.status === "Assigned" || r.status === "Pending");
+    filtered = my.filter(t => t.status === "Assigned");
   }
   if(activeTab === "inprogress"){
-    filtered = mine.filter(r => r.status === "In Progress");
+    filtered = my.filter(t => t.status === "In Progress");
   }
   if(activeTab === "completed"){
-    filtered = mine.filter(r => r.status === "Completed");
+    filtered = my.filter(t => t.status === "Completed");
   }
   if(activeTab === "history"){
-    filtered = mine; // show all assigned
+    filtered = my;
   }
 
   if(filtered.length === 0){
-    list.innerHTML = `<p class="text-gray-600 text-sm">No tasks found.</p>`;
+    list.innerHTML = `<p class="text-gray-500 text-sm">No tasks here.</p>`;
     return;
   }
 
-  filtered.forEach((task, idx)=>{
-    const card = document.createElement("div");
-    card.className = "card cursor-pointer";
+  filtered.forEach(t => {
+    list.innerHTML += `
+      <div class="card">
+        <div class="flex justify-between">
+          <div>
+            <h3 class="font-semibold">${t.service}</h3>
+            <p class="text-sm text-gray-600">${t.details || ""}</p>
+            <p class="text-sm text-gray-700 font-medium">Room: ${t.room}</p>
+            <p class="status ${t.status.replace(" ","")}">${t.status}</p>
+          </div>
 
-    card.innerHTML = `
-      <div class="flex justify-between">
-        <div>
-          <div class="font-semibold">${task.service}</div>
-          <div class="text-sm text-gray-600">Room ${task.room} — ${task.type}</div>
+          <div class="flex flex-col gap-2 ml-4">
+            ${t.status === "Assigned" ? `<button class="bg-orange-500 text-white px-3 py-1 rounded startBtn" data-index="${t.index}">Start</button>` : ""}
+            ${t.status === "In Progress" ? `<button class="bg-green-600 text-white px-3 py-1 rounded completeBtn" data-index="${t.index}">Complete</button>` : ""}
+          </div>
         </div>
-        <div class="status ${task.status.replace(" ","")}">${task.status}</div>
-      </div>
-
-      <div class="text-xs text-gray-500 mt-2">${task.created_at}</div>
-
-      <div class="mt-3 flex gap-2">
-        ${
-          (task.status === "Assigned" || task.status === "Pending")
-          ? `<button class="px-3 py-1 bg-amber-500 text-white rounded startBtn" data-id="${task.id}">Start</button>`
-          : ""
-        }
-        ${
-          task.status === "In Progress"
-          ? `<button class="px-3 py-1 bg-green-600 text-white rounded completeBtn" data-id="${task.id}">Complete</button>`
-          : ""
-        }
       </div>
     `;
-
-    // Summary when clicking card
-    card.onclick = (e)=>{
-      if(e.target.classList.contains("startBtn") || e.target.classList.contains("completeBtn"))
-        return;
-      openSummary(task);
-    };
-
-    list.appendChild(card);
   });
 }
 
-/* -------------------------------
-   BUTTON ACTIONS
--------------------------------- */
-document.addEventListener("click", e=>{
+/* ACTION HANDLING */
+document.addEventListener("click", e => {
   const all = getRequests();
 
-  // Start
+  // Start task
   if(e.target.classList.contains("startBtn")){
-    const id = e.target.dataset.id;
-    const idx = all.findIndex(r => r.id == id);
-    if(idx > -1){
-      all[idx].status = "In Progress";
-      all[idx].updated_at = new Date().toLocaleString();
-      localStorage.setItem("requests", JSON.stringify(all));
-      render();
-    }
+    const idx = Number(e.target.dataset.index);
+    all[idx].status = "In Progress";
+    all[idx].updated_at = new Date().toLocaleString();
+    saveRequests(all);
+    render();
   }
 
-  // Complete
+  // Complete task
   if(e.target.classList.contains("completeBtn")){
-    const id = e.target.dataset.id;
-    const idx = all.findIndex(r => r.id == id);
-    if(idx > -1){
-      all[idx].status = "Completed";
-      all[idx].updated_at = new Date().toLocaleString();
-      localStorage.setItem("requests", JSON.stringify(all));
-      render();
-    }
+    const idx = Number(e.target.dataset.index);
+    all[idx].status = "Completed";
+    all[idx].updated_at = new Date().toLocaleString();
+    saveRequests(all);
+    render();
   }
 });
 
-/* -------------------------------
-   SUMMARY MODAL
--------------------------------- */
-function openSummary(task){
-  const box = document.getElementById("modalBox");
-
-  box.innerHTML = `
-    <h3 class="text-xl font-semibold mb-2">Task Summary</h3>
-
-    <p><strong>Service:</strong> ${task.service}</p>
-    <p><strong>Category:</strong> ${task.type}</p>
-    <p><strong>Room:</strong> ${task.room}</p>
-    <p><strong>Request:</strong> ${task.details}</p>
-    <p><strong>Status:</strong> ${task.status}</p>
-
-    <div class="text-right mt-4">
-      <button onclick="closeModal()" class="px-4 py-1 bg-gray-300 rounded">Close</button>
-    </div>
-  `;
-
-  document.getElementById("modalBg").classList.remove("hidden");
-}
-
-function closeModal(){
-  document.getElementById("modalBg").classList.add("hidden");
-}
-
-/* -------------------------------
-   LOGOUT
--------------------------------- */
+/* LOGOUT */
 document.getElementById("logout").onclick = ()=>{
   localStorage.removeItem("staffAuth");
   location.href = "login.html";
@@ -228,5 +153,6 @@ document.getElementById("logout").onclick = ()=>{
 
 render();
 </script>
+
 </body>
 </html>
