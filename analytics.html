@@ -1,0 +1,281 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Analytics Dashboard - Hotel Portal</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+    body{
+      font-family:Arial;
+      margin:0;
+      background:#f4f6fb;
+      color:#111;
+    }
+    header{
+      background:#1f2937;
+      color:#fff;
+      padding:14px 20px;
+      display:flex;
+      align-items:center;
+    }
+    .wrap{
+      padding:20px;
+      max-width:1100px;
+      margin:0 auto;
+    }
+    .cards{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+    .card{
+      background:#fff;
+      padding:14px;
+      border-radius:10px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.04);
+      flex:1;
+      min-width:160px;
+    }
+    .summary-small{
+      font-size:12px;
+      color:#6b7280;
+    }
+    .summary-num{
+      font-size:22px;
+      font-weight:700;
+      margin-top:6px;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+      border-radius:8px;
+      overflow:hidden;
+      box-shadow:0 4px 12px rgba(0,0,0,0.04);
+      margin-top:12px;
+    }
+    th,td{
+      padding:10px;
+      border-bottom:1px solid #eee;
+      text-align:left;
+    }
+    th{
+      background:#fafbfd;
+      color:#6b7280;
+    }
+    .btn{
+      padding:8px 10px;
+      border-radius:6px;
+      border:none;
+      cursor:pointer;
+      background:#2563eb;
+      color:#fff;
+    }
+    .filters{
+      display:flex;
+      gap:8px;
+      margin-bottom:12px;
+      align-items:center;
+    }
+    .small-muted{
+      font-size:13px;
+      color:#666;
+    }
+    .json-box{
+      background:#fff;
+      padding:12px;
+      border-radius:8px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.03);
+      margin-top:12px;
+      white-space:pre-wrap;
+      font-family:monospace;
+      font-size:13px;
+      max-height:320px;
+      overflow:auto;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div style="font-weight:700">Analytics Dashboard</div>
+</header>
+
+<div class="wrap">
+
+  <!-- Navigation -->
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+    <a href="admin_final.html" class="btn" style="background:#111827">← Back to Admin</a>
+    <div class="small-muted">Overview of requests and staff performance</div>
+  </div>
+
+  <!-- Top Cards -->
+  <div class="cards" id="topCards"></div>
+
+  <!-- Category-wise & Staff Performance -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    
+    <!-- Category Stats -->
+    <div style="flex:1;min-width:300px">
+      <h3 style="margin:6px 0">Category-wise</h3>
+
+      <table id="catTable">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Received</th>
+            <th>Pending</th>
+            <th>Assigned</th>
+            <th>Completed</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Staff Performance -->
+    <div style="flex:1;min-width:300px">
+      <h3 style="margin:6px 0">Staff Performance</h3>
+
+      <table id="staffPerf">
+        <thead>
+          <tr>
+            <th>Staff</th>
+            <th>Category</th>
+            <th>Handled</th>
+            <th>Completed</th>
+            <th>Done %</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- JSON EXPORT -->
+  <div style="margin-top:18px;display:flex;justify-content:space-between;align-items:center">
+    <h3 style="margin:0">Raw JSON / Export</h3>
+    <div>
+      <button class="btn" id="downloadBtn">Download JSON</button>
+      <button class="btn" id="refreshBtn" style="background:#10b981">Refresh</button>
+    </div>
+  </div>
+
+  <div class="json-box" id="jsonBox"></div>
+
+</div>
+
+<script>
+/* Helpers */
+function getRequests(){ 
+  return JSON.parse(localStorage.getItem('requests') || '[]'); 
+}
+function getStaff(){ 
+  return JSON.parse(localStorage.getItem('staffList') || '[]'); 
+}
+
+/* Top Cards */
+function renderTopCards(){
+  const all=getRequests();
+  const total=all.length;
+  const pending=all.filter(r=>r.status==='Pending').length;
+  const assigned=all.filter(r=>r.status==='Assigned').length;
+  const inprog=all.filter(r=>r.status==='In Progress').length;
+  const completed=all.filter(r=>r.status==='Completed').length;
+  const ignored=all.filter(r=>r.status==='Ignored').length;
+
+  document.getElementById('topCards').innerHTML = `
+    <div class="card"><div class="summary-small">Total Received</div><div class="summary-num">${total}</div></div>
+    <div class="card"><div class="summary-small">Pending</div><div class="summary-num">${pending}</div></div>
+    <div class="card"><div class="summary-small">Assigned</div><div class="summary-num">${assigned}</div></div>
+    <div class="card"><div class="summary-small">In Progress</div><div class="summary-num">${inprog}</div></div>
+    <div class="card"><div class="summary-small">Completed</div><div class="summary-num">${completed}</div></div>
+    <div class="card"><div class="summary-small">Ignored</div><div class="summary-num">${ignored}</div></div>
+  `;
+}
+
+/* Category Stats */
+function renderCategoryTable(){
+  const all=getRequests();
+  const cats=['Housekeeping','Travel','Food'];
+  const tbody = document.querySelector('#catTable tbody');
+  tbody.innerHTML='';
+
+  cats.forEach(cat=>{
+    const rows = all.filter(r=>r.type===cat);
+    tbody.innerHTML += `
+      <tr>
+        <td>${cat}</td>
+        <td>${rows.length}</td>
+        <td>${rows.filter(r=>r.status==='Pending').length}</td>
+        <td>${rows.filter(r=>r.status==='Assigned').length}</td>
+        <td>${rows.filter(r=>r.status==='Completed').length}</td>
+      </tr>
+    `;
+  });
+}
+
+/* Staff Performance */
+function renderStaffPerf(){
+  const all=getRequests();
+  const staff = getStaff();
+  const tbody=document.querySelector('#staffPerf tbody');
+  tbody.innerHTML='';
+
+  staff.forEach(s=>{
+    const handled = all.filter(r=>r.assigned_to===s.name).length;
+    const completed = all.filter(r=>r.assigned_to===s.name && r.status==='Completed').length;
+    const percent = handled ? Math.round(completed / handled * 100) : 0;
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${s.name}</td>
+        <td>${s.category}</td>
+        <td>${handled}</td>
+        <td>${completed}</td>
+        <td>${percent}%</td>
+      </tr>
+    `;
+  });
+}
+
+/* Raw JSON Box */
+function renderJSON(){
+  const all = getRequests();
+  document.getElementById('jsonBox').innerText = JSON.stringify(all, null, 2);
+}
+
+/* Download JSON */
+document.getElementById('downloadBtn').onclick = ()=>{
+  const data = JSON.stringify(getRequests(), null, 2);
+  const blob = new Blob([data],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='requests.json';
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
+
+/* Refresh Button */
+document.getElementById('refreshBtn').onclick = ()=> renderAll();
+
+/* Run All */
+function renderAll(){
+  renderTopCards();
+  renderCategoryTable();
+  renderStaffPerf();
+  renderJSON();
+}
+
+/* INIT */
+renderAll();
+</script>
+
+</body>
+</html>
