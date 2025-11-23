@@ -1,135 +1,147 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Spice De Morjim — Guest Services</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-
-<style>
-/* ============================== */
-/*       LUXURY THEME (ONLY)      */
-/* ============================== */
-
-:root{
-  --gold:#fbbf24;
-  --gold-soft:#fcd34d;
-  --dark:#0f172a;
-  --dark2:#141f32;
-  --text-light:#f8fafc;
-  --text-muted:#94a3b8;
-}
-
-body{
-  margin:0;
-  padding:24px;
-  background:linear-gradient(180deg,#0b1324 0%, #0f172a 80%);
-  font-family:Inter, sans-serif;
-  color:var(--text-light);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-.container{
-  max-width:900px;
-  width:100%;
-  margin:auto;
-  padding:20px;
-  background:rgba(255,255,255,0.04);
-  border-radius:18px;
-  box-shadow:0 18px 45px rgba(0,0,0,0.45);
-  backdrop-filter:blur(7px);
-}
-
-/* ------------------ */
-/*      HEADER        */
-/* ------------------ */
-
-.brand{
-  text-align:center;
-  font-family:"Playfair Display", serif;
-  font-size:38px;
-  color:var(--gold-soft);
-  margin-top:6px;
-}
-.sub{
-  text-align:center;
-  color:var(--text-muted);
-  margin-bottom:20px;
-  font-size:14px;
-}
-
-/* ------------------ */
-/*   MAIN ACTIONS     */
-/* ------------------ */
-
-.main-actions{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  margin-top:20px;
-}
-
-.big-btn{
-  padding:16px 20px;
-  border-radius:14px;
-  font-size:18px;
-  font-weight:700;
-  border:none;
-  cursor:pointer;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  color:#0f172a;
-  background:linear-gradient(90deg, var(--gold), var(--gold-soft));
-  box-shadow:0 8px 28px rgba(251,191,36,0.4);
-  transition:.2s ease;
-}
-.big-btn:hover{ transform:translateY(-4px); }
-
-.big-btn.secondary{
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.15);
-  color:var(--text-light);
-  box-shadow:none;
-}
-
-/* DO NOT TOUCH ORIGINAL FOOD / CART / MENU UI */
-.hidden{display:none !important;}
-</style>
+  <title>Hotel Service App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+    }
+    .container {
+      padding: 20px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .food-item {
+      background-color: #fff;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      border-left: 5px solid #007bff;
+    }
+    .cart {
+      background-color: #fff;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 5px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;height: 100%;width: 100%;
+      background: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+width: 90%;max-width: 400px;
+    }
+  </style>
 </head>
-
 <body>
 
 <div class="container">
+  <h1>Hotel Service Menu</h1>
+  <button class="btn" onclick="location.href='housekeeping.html'">Housekeeping</button>
+  <button class="btn" onclick="location.href='travel.html'">Travel Desk</button>
+  <button class="btn" onclick="loadFoodMenu()">Food Menu</button>
 
-  <!-- HEADER -->
-  <div class="brand">Spice De Morjim</div>
-  <div class="sub">Premium Coastal Retreat — Guest Services</div>
+  <div id="foodList"></div>
 
-  <!-- MAIN BUTTONS (flow unchanged) -->
-  <div class="main-actions">
-
-      <button class="big-btn" onclick="location.href='housekeeping.html'">
-        🧹 Housekeeping
-        <span>→</span>
-      </button>
-
-      <button class="big-btn" onclick="location.href='travel.html'">
-        🚗 Travel Desk
-        <span>→</span>
-      </button>
-
-      <button class="big-btn secondary" onclick="location.href='food.html'">
-        🍽️ Restaurant / Food
-        <span>→</span>
-      </button>
-
+  <div class="cart" id="cart" style="display:none;">
+    <h3>Cart</h3>
+    <div id="cartItems"></div>
+    <button class="btn" onclick="openCheckout()">Checkout</button>
   </div>
-
 </div>
+
+<div class="modal" id="checkoutModal">
+  <div class="modal-content">
+    <h3>Confirm Order</h3>
+    <div id="checkoutDetails"></div>
+    <button class="btn" onclick="confirmOrder()">Confirm</button>
+    <button class="btn" style="background:red;" onclick="closeCheckout()">Cancel</button>
+  </div>
+</div>
+
+<script>
+const foodMenu = {
+  Breakfast: [
+    { name: "Idli", price: 60 },
+    { name: "Dosa", price: 80 }
+  ],
+  Lunch: [
+    { name: "Veg Thali", price: 150 },
+    { name: "Fried Rice", price: 140 }
+  ]
+};
+
+let cart = [];
+
+function loadFoodMenu() {
+  let html = '';
+  for (let category in foodMenu) {
+    html += `<h2>${category}</h2>`;
+    foodMenu[category].forEach(item => {
+      html += `
+      <div class="food-item">
+        <strong>${item.name}</strong> - ₹${item.price}
+        <button class='btn' style='margin-top:10px;background:green;' onclick="addToCart('${item.name}', ${item.price})">Add to Cart</button>
+      </div>`;
+    });
+  }
+  document.getElementById("foodList").innerHTML = html;
+}
+
+function addToCart(name, price) {
+  cart.push({ name, price });
+  updateCart();
+}
+
+function updateCart() {
+  document.getElementById("cart").style.display = cart.length ? "block" : "none";
+  let html = '';
+  cart.forEach(item => {
+    html += `<p>${item.name} - ₹${item.price}</p>`;
+  });
+  document.getElementById("cartItems").innerHTML = html;
+}
+
+function openCheckout() {
+  document.getElementById("checkoutModal").style.display = "flex";
+  let html = '';
+  cart.forEach(item => {
+    html += `<p>${item.name} - ₹${item.price}</p>`;
+  });
+  document.getElementById("checkoutDetails").innerHTML = html;
+}
+
+function closeCheckout() {
+  document.getElementById("checkoutModal").style.display = "none";
+}
+
+function confirmOrder() {
+  alert("Order confirmed! Thank you.");
+  cart = [];
+  updateCart();
+  closeCheckout();
+}
+</script>
 
 </body>
 </html>
