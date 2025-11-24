@@ -1,180 +1,527 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Admin Dashboard (Simple Workflow)</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
-<script src="https://cdn.tailwindcss.com"></script>
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin Dashboard — Clean & Complete</title>
 <style>
-.badge {
-  padding: 4px 8px;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-}
-.Pending { background:#6b7280; }
-.InProgress { background:#f59e0b; }
-.Completed { background:#16a34a; }
-.Ignored { background:#9ca3af; }
+/* Compact clean UI */
+*{box-sizing:border-box;font-family:Inter,Arial,Helvetica,sans-serif}
+body{background:#f4f6fb;color:#0f172a;margin:0;font-size:14px}
+header{height:52px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:60}
+header .brand{font-weight:700}
+header a{color:#fff;text-decoration:underline;font-size:13px;margin-left:12px}
 
-.card {
-  background:white;
-  padding:16px;
-  border-radius:10px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.1);
-  margin-bottom:16px;
-}
+/* Layout */
+.layout{display:flex;min-height:calc(100vh - 52px)}
+.sidebar{width:220px;background:#fff;border-right:1px solid #e6eef6;padding:14px;display:flex;flex-direction:column;gap:6px}
+.sidebar h3{font-size:13px;color:#64748b;margin:0 0 8px}
+.sb-item{padding:9px 10px;border-radius:6px;cursor:pointer;color:#334155;display:flex;align-items:center;gap:8px}
+.sb-item:hover{background:#f1f5f9}
+.sb-item.active{background:#2563eb;color:#fff}
+
+/* Main */
+main{flex:1;padding:14px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.controls .search{flex:1;min-width:200px;display:flex;gap:6px}
+.controls input[type="text"]{flex:1;padding:8px;border-radius:8px;border:1px solid #e6edf6;background:#fff}
+.controls select, .controls button{padding:8px;border-radius:8px;border:1px solid #e6edf6;background:#fff}
+
+/* Cards */
+.cards{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.card{background:#fff;padding:10px;border-radius:8px;flex:1;min-width:120px;box-shadow:0 6px 18px rgba(2,6,23,0.04)}
+.card .label{font-size:12px;color:#64748b}
+.card .num{font-weight:700;font-size:18px;margin-top:6px}
+
+/* Table */
+.table-wrap{background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e6eef6}
+table{width:100%;border-collapse:collapse}
+thead th{background:#fbfdff;padding:10px 12px;color:#64748b;text-align:left;font-weight:600;border-bottom:1px solid #f1f5f9}
+tbody td{padding:10px 12px;border-bottom:1px solid #f6f8fb;vertical-align:middle}
+tbody tr:hover td{background:#fbfcff}
+
+/* Status badge */
+.status-badge{display:inline-block;padding:6px 8px;border-radius:999px;color:#fff;font-weight:700;font-size:12px}
+.status-Pending{background:#6b7280}
+.status-Assigned{background:#2563eb}
+.status-In\ Progress{background:#f59e0b}
+.status-Completed{background:#16a34a}
+.status-Ignored{background:#94a3b8}
+
+/* Actions */
+.action-group{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.assign-select{padding:6px;border-radius:6px;border:1px solid #e6edf6}
+.btn{padding:7px 10px;border-radius:6px;border:0;color:#fff;cursor:pointer;font-size:13px}
+.btn-assign{background:#10b981}
+.btn-start{background:#f59e0b}
+.btn-complete{background:#16a34a}
+.btn-ignore{background:#64748b}
+.btn-ghost{background:transparent;border:1px solid #e6edf6;color:#0f172a}
+
+/* Modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:2000}
+.modal{background:#fff;padding:16px;border-radius:10px;max-width:520px;width:94%;box-shadow:0 12px 30px rgba(2,6,23,0.12)}
+
+/* Responsive */
+@media(max-width:900px){.sidebar{display:none}.controls{gap:8px}}
 </style>
 </head>
+<body>
 
-<body class="bg-gray-100 p-5">
-
-<h1 class="text-2xl font-bold mb-4">Admin Dashboard</h1>
-
-<!-- CREATE REQUEST FORM -->
-<div class="mb-6 p-4 bg-white shadow rounded">
-  <h3 class="font-semibold mb-2">Create Request</h3>
-  <div class="grid grid-cols-2 gap-3">
-    <input id="type" placeholder="Category (housekeeping/travel/food)" class="border p-2">
-    <input id="service" placeholder="Service Name" class="border p-2">
-    <input id="guest" placeholder="Guest Name" class="border p-2">
-    <input id="room" placeholder="Room Number" class="border p-2">
-    <textarea id="details" placeholder="Details" class="border p-2 col-span-2"></textarea>
+<header>
+  <div class="brand">Spice De Morjim — Admin</div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="login.html">Logout</a>
   </div>
-  <button onclick="createRequest()" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded">
-    Add Request
-  </button>
+</header>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" aria-label="Admin menu">
+    <h3>ADMIN MENU</h3>
+    <div class="sb-item" data-action="analytics">📊 Analytics</div>
+    <div class="sb-item active" data-action="dashboard">📋 Dashboard</div>
+    <div class="sb-item" data-action="add-staff">➕ Add Staff</div>
+    <div class="sb-item" data-action="food-menu">🍽 Food Menu</div>
+    <div class="sb-item" data-action="settings">⚙ Settings</div>
+
+    <div style="margin-top:auto;color:#64748b;font-size:13px" id="quickStats">Requests: 0 · Assigned: 0 · Ignored: 0</div>
+  </aside>
+
+  <!-- Main -->
+  <main>
+    <!-- Controls -->
+    <div class="controls">
+      <div class="search">
+        <input id="searchInput" type="text" placeholder="Search room, guest, service, details..." />
+        <button id="clearSearch" class="btn btn-ghost">Clear</button>
+      </div>
+
+      <select id="staffFilter"><option value="">All Staff</option></select>
+      <select id="categoryFilter">
+        <option value="">All Categories</option>
+        <option>Housekeeping</option><option>Travel</option><option>Food</option>
+      </select>
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option>Pending</option><option>Assigned</option><option>In Progress</option><option>Completed</option><option>Ignored</option>
+      </select>
+
+      <button id="refreshBtn" class="btn btn-ghost">Refresh</button>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="cards" id="dashboardCards" aria-live="polite"></div>
+
+    <!-- Table -->
+    <div class="table-wrap" role="region" aria-label="Requests table">
+      <table id="reqTable">
+        <thead>
+          <tr>
+            <th style="width:48px">#</th>
+            <th style="width:110px">Category</th>
+            <th>Service / Summary</th>
+            <th style="width:110px">Guest</th>
+            <th style="width:86px">Room</th>
+            <th style="width:170px">Time</th>
+            <th style="width:120px">Status</th>
+            <th style="width:140px">Staff</th>
+            <th style="width:260px">Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+  </main>
 </div>
 
-<!-- REQUEST LIST -->
-<div id="reqList"></div>
+<!-- Modal backdrop -->
+<div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
+  <div class="modal" id="modalContent"></div>
+</div>
 
 <script>
-/* --------------------------
-   LOCALSTORAGE HELPERS
-----------------------------*/
-function load() {
-  return JSON.parse(localStorage.getItem("requests") || "[]");
+/* ===========================
+   Storage helpers
+   =========================== */
+function getRequests(){ return JSON.parse(localStorage.getItem('requests') || '[]'); }
+function setRequests(a){ localStorage.setItem('requests', JSON.stringify(a)); }
+function getStaff(){
+  try{
+    const s = JSON.parse(localStorage.getItem('staffList') || '[]');
+    // normalize to object array
+    return s.map(p => typeof p === 'string' ? {name:p,category:'Housekeeping'} : {name:p.name||p, category:(p.category||'Housekeeping')});
+  }catch(e){ return []; }
 }
-function save(data) {
-  localStorage.setItem("requests", JSON.stringify(data));
+function setStaff(a){ localStorage.setItem('staffList', JSON.stringify(a)); }
+function getFood(){ return JSON.parse(localStorage.getItem('foodMenu') || '{}'); }
+function setFood(obj){ localStorage.setItem('foodMenu', JSON.stringify(obj)); }
+
+/* ===========================
+   Modal helpers
+   =========================== */
+const modalBackdrop = document.getElementById('modalBackdrop');
+const modalContent = document.getElementById('modalContent');
+function openModal(html){
+  modalContent.innerHTML = html;
+  modalBackdrop.style.display = 'flex';
+}
+function closeModal(){
+  modalBackdrop.style.display = 'none';
+  modalContent.innerHTML = '';
+}
+modalBackdrop.addEventListener('click', (e) => { if(e.target === modalBackdrop) closeModal(); });
+
+/* ===========================
+   UI: staff & quick stats
+   =========================== */
+function populateStaffFilter(){
+  const staff = getStaff();
+  const el = document.getElementById('staffFilter');
+  el.innerHTML = '<option value="">All Staff</option>' + staff.map(s => `<option value="${s.name}">${s.name} — ${s.category}</option>`).join('');
 }
 
-/* --------------------------
-   CREATE REQUEST
-----------------------------*/
-function createRequest() {
-  let all = load();
-
-  const req = {
-    id: Date.now().toString(),
-    type: type.value.trim(),
-    service: service.value.trim(),
-    name: guest.value.trim(),
-    room: room.value.trim(),
-    details: details.value.trim(),
-    status: "Pending",
-    created_at: new Date().toLocaleString(),
-    updated_at: ""
-  };
-
-  all.push(req);
-  save(all);
-  render();
+/* quick stats */
+function updateQuickStats(){
+  const all = getRequests();
+  const assigned = all.filter(r => r.status === 'Assigned').length;
+  const ignored = all.filter(r => r.status === 'Ignored').length;
+  document.getElementById('quickStats').innerText = `Requests: ${all.length} · Assigned: ${assigned} · Ignored: ${ignored}`;
 }
 
-/* --------------------------
-   WORKFLOW: NEXT STEP
-----------------------------*/
-function nextStep(id) {
-  let all = load();
-  let idx = all.findIndex(r => r.id === id);
+/* ===========================
+   Dashboard cards
+   =========================== */
+function renderDashboardCards(){
+  const all = getRequests();
+  const pending = all.filter(r=>r.status==='Pending').length;
+  const assigned = all.filter(r=>r.status==='Assigned').length;
+  const inProg = all.filter(r=>r.status==='In Progress').length;
+  const completed = all.filter(r=>r.status==='Completed').length;
+  const ignored = all.filter(r=>r.status==='Ignored').length;
 
-  if (idx > -1) {
-    let current = all[idx].status;
+  const container = document.getElementById('dashboardCards');
+  container.innerHTML = `
+    <div class="card"><div class="label">Total</div><div class="num">${all.length}</div></div>
+    <div class="card"><div class="label">Pending</div><div class="num">${pending}</div></div>
+    <div class="card"><div class="label">Assigned</div><div class="num">${assigned}</div></div>
+    <div class="card"><div class="label">In Progress</div><div class="num">${inProg}</div></div>
+    <div class="card"><div class="label">Completed</div><div class="num">${completed}</div></div>
+    <div class="card"><div class="label">Ignored</div><div class="num">${ignored}</div></div>
+  `;
+}
 
-    if (current === "Pending") all[idx].status = "In Progress";
-    else if (current === "In Progress") all[idx].status = "Completed";
-    else return;  // Completed or Ignored → no action
+/* ===========================
+   Table render (clean & correct indexes)
+   =========================== */
+function renderTable(){
+  const all = getRequests();
+  const tbody = document.querySelector('#reqTable tbody');
+  tbody.innerHTML = '';
 
-    all[idx].updated_at = new Date().toLocaleString();
-    save(all);
-    render();
+  const search = document.getElementById('searchInput').value.trim().toLowerCase();
+  const staffFilter = document.getElementById('staffFilter').value;
+  const catFilter = document.getElementById('categoryFilter').value;
+  const statusFilter = document.getElementById('statusFilter').value;
+
+  // Render newest first but keep mapping to original index using origIndex
+  for(let i = all.length - 1; i >= 0; i--){
+    const r = all[i];
+
+    // filters
+    if(statusFilter && r.status !== statusFilter) continue;
+    if(staffFilter && (r.assigned_to || '') !== staffFilter) continue;
+    if(catFilter && r.type !== catFilter) continue;
+    if(search){
+      const hay = `${r.service||''} ${r.details||''} ${r.room||''} ${r.name||''}`.toLowerCase();
+      if(!hay.includes(search)) continue;
+    }
+
+    const summary = (r.service || '-') + (r.details ? ' — ' + (r.details.length > 120 ? r.details.slice(0,120)+'...' : r.details) : '');
+    const type = r.type || '-';
+    const staffList = getStaff().filter(s => (s.category||'').toLowerCase() === (type||'').toLowerCase());
+
+    // actions: show controls according to r.status
+    let actionsHtml = '';
+    if(!r.assigned_to || r.status === 'Pending' || r.status === 'Ignored'){
+      const options = staffList.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+      actionsHtml = `<select class="assign-select" data-idx="${i}"><option value="">Assign staff</option>${options}</select>
+                     <button class="btn btn-assign" data-assign="${i}">Assign</button>`;
+    } else if(r.status === 'Assigned'){
+      actionsHtml = `<button class="btn btn-start" data-start="${i}">Start</button>
+                     <button class="btn btn-ignore" data-ignore="${i}">Ignore</button>`;
+    } else if(r.status === 'In Progress'){
+      actionsHtml = `<button class="btn btn-complete" data-complete="${i}">Complete</button>
+                     <button class="btn btn-ignore" data-ignore="${i}">Ignore</button>`;
+    } else {
+      actionsHtml = `<span style="color:#64748b;font-size:13px">—</span>`;
+    }
+
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td>${i+1}</td>
+        <td>${type}</td>
+        <td><div style="font-weight:600">${summary}</div></td>
+        <td>${r.name || 'Guest'}</td>
+        <td>${r.room || '-'}</td>
+        <td>${r.time || ''}</td>
+        <td>${renderStatus(r.status || 'Pending')}</td>
+        <td>${r.assigned_to ? r.assigned_to + '<div style="color:#64748b;font-size:12px">'+ (getStaff().find(s=>s.name===r.assigned_to)?.category||'') +'</div>' : '-'}</td>
+        <td class="action-group">${actionsHtml}</td>
+      </tr>
+    `);
   }
+
+  renderDashboardCards();
+  updateQuickStats();
 }
 
-/* --------------------------
-   IGNORE REQUEST
-----------------------------*/
-function ignoreReq(id) {
-  let all = load();
-  let idx = all.findIndex(r => r.id === id);
+/* helper to render status badge */
+function renderStatus(s){
+  const safe = s || 'Pending';
+  return `<span class="status-badge status-${safe.replace(/ /g,'-')}">${safe}</span>`;
+}
 
-  if (idx > -1) {
-    all[idx].status = "Ignored";
-    all[idx].updated_at = new Date().toLocaleString();
-    save(all);
-    render();
+/* ===========================
+   Action handlers (assign/start/complete/ignore)
+   =========================== */
+document.addEventListener('click', (e) => {
+  const all = getRequests();
+  const t = e.target;
+
+  // Assign button
+  if(t.matches('[data-assign]')){
+    const idx = Number(t.getAttribute('data-assign'));
+    const sel = document.querySelector(`select.assign-select[data-idx="${idx}"]`);
+    if(!sel || !sel.value){ alert('Select staff to assign'); return; }
+    all[idx].assigned_to = sel.value;
+    all[idx].status = 'Assigned';
+    setRequests(all);
+    renderTable();
+    return;
   }
-}
 
-/* --------------------------
-   DELETE REQUEST
-----------------------------*/
-function deleteReq(id) {
-  let all = load();
-  all = all.filter(r => r.id !== id);
-  save(all);
-  render();
-}
+  // Start
+  if(t.matches('[data-start]')){
+    const idx = Number(t.getAttribute('data-start'));
+    all[idx].status = 'In Progress';
+    setRequests(all);
+    renderTable();
+    return;
+  }
 
-/* --------------------------
-   RENDER REQUEST LIST
-----------------------------*/
-function render() {
-  let all = load();
-  let html = "";
+  // Complete
+  if(t.matches('[data-complete]')){
+    const idx = Number(t.getAttribute('data-complete'));
+    all[idx].status = 'Completed';
+    setRequests(all);
+    renderTable();
+    return;
+  }
 
-  all.forEach(r => {
-    let btnText = "";
+  // Ignore
+  if(t.matches('[data-ignore]')){
+    const idx = Number(t.getAttribute('data-ignore'));
+    if(!confirm('Ignore this request?')) return;
+    all[idx].status = 'Ignored';
+    setRequests(all);
+    renderTable();
+    return;
+  }
+});
 
-    if (r.status === "Pending") btnText = "Start";
-    else if (r.status === "In Progress") btnText = "Complete";
-    else btnText = "";
+/* ===========================
+   Sidebar actions: Add Staff, Food Menu, Analytics, Settings
+   =========================== */
+document.querySelectorAll('.sb-item').forEach(it => {
+  it.addEventListener('click', () => {
+    document.querySelectorAll('.sb-item').forEach(x => x.classList.remove('active'));
+    it.classList.add('active');
+    const a = it.getAttribute('data-action');
 
-    html += `
-      <div class="card">
-        <div class="flex justify-between mb-2">
-          <div>
-            <div class="font-semibold text-lg">${r.service}</div>
-            <div class="text-sm text-gray-600">${r.type} • Room ${r.room}</div>
-            <div class="text-xs text-gray-500">${r.created_at}</div>
-          </div>
-          <div class="badge ${r.status.replace(" ", "")}">${r.status}</div>
-        </div>
-
-        <div class="text-sm mb-3">${r.details || ""}</div>
-
-        <div class="flex gap-2">
-          ${btnText ? 
-            `<button class="px-3 py-1 bg-blue-600 text-white rounded" onclick="nextStep('${r.id}')">${btnText}</button>` 
-            : ""}
-          
-          <button class="px-3 py-1 bg-gray-600 text-white rounded" onclick="ignoreReq('${r.id}')">Ignore</button>
-          <button class="px-3 py-1 bg-red-600 text-white rounded" onclick="deleteReq('${r.id}')">Delete</button>
-        </div>
-      </div>
-    `;
+    if(a === 'analytics'){
+      // ensure correct path; analytics.html should exist
+      location.href = 'analytics.html';
+    } else if(a === 'add-staff'){
+      openAddStaffModal();
+    } else if(a === 'food-menu'){
+      openFoodMenuModal();
+    } else if(a === 'settings'){
+      openSettingsModal();
+    } else if(a === 'dashboard'){
+      // focus main
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
   });
+});
 
-  document.getElementById("reqList").innerHTML = html;
+/* ===========================
+   Add Staff modal
+   =========================== */
+function openAddStaffModal(){
+  openModal(`
+    <h3 style="margin:0 0 10px">Add New Staff</h3>
+    <div style="margin-bottom:10px"><input id="newStaffName" placeholder="Name" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e6edf6"></div>
+    <div style="margin-bottom:12px">
+      <select id="newStaffCategory" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e6edf6">
+        <option>Housekeeping</option><option>Travel</option><option>Food</option>
+      </select>
+    </div>
+    <div style="text-align:right">
+      <button onclick="closeModal()" class="btn btn-ghost" style="margin-right:8px">Cancel</button>
+      <button onclick="addStaff()" class="btn btn-assign">Add Staff</button>
+    </div>
+  `);
 }
 
-render();
-</script>
+function addStaff(){
+  const name = document.getElementById('newStaffName').value.trim();
+  const category = document.getElementById('newStaffCategory').value;
+  if(!name){ alert('Enter staff name'); return; }
+  const staff = getStaff();
+  if(staff.some(s => s.name.toLowerCase() === name.toLowerCase())){ alert('Staff already exists'); return; }
+  staff.push({name, category});
+  setStaff(staff);
+  populateStaffFilter();
+  closeModal();
+}
 
+/* ===========================
+   Food menu modal (add/edit)
+   =========================== */
+function openFoodMenuModal(){
+  const menu = getFood();
+  // Build simple list
+  let html = '<h3 style="margin:0 0 10px">Food Menu</h3>';
+  html += `<div style="margin-bottom:8px"><strong>Existing categories/items</strong></div>`;
+  const cats = Object.keys(menu);
+  if(cats.length === 0) html += '<div style="color:#64748b;margin-bottom:8px">No items yet</div>';
+  else{
+    html += '<div style="max-height:220px;overflow:auto;padding:6px;border:1px solid #eef3f8;border-radius:6px;margin-bottom:12px">';
+    cats.forEach(cat=>{
+      html += `<div style="margin-bottom:8px"><strong>${cat}</strong><div style="font-size:13px;margin-top:4px">`;
+      menu[cat].forEach((it,idx)=>{
+        html += `<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9">
+                   <div>${it.name} — ${it.price || ''}</div>
+                   <div><button class="btn btn-ghost" onclick="removeFoodItem('${escapeQuotes(cat)}', ${idx})">Remove</button></div>
+                 </div>`;
+      });
+      html += `</div></div>`;
+    });
+    html += '</div>';
+  }
+
+  // Add new item form
+  html += `
+    <div style="margin-bottom:8px"><input id="foodCategory" placeholder="Category (e.g. Snacks)" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e6edf6"></div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input id="foodName" placeholder="Item name" style="flex:1;padding:8px;border-radius:6px;border:1px solid #e6edf6">
+      <input id="foodPrice" placeholder="Price" style="width:120px;padding:8px;border-radius:6px;border:1px solid #e6edf6">
+    </div>
+    <div style="text-align:right">
+      <button onclick="closeModal()" class="btn btn-ghost" style="margin-right:8px">Close</button>
+      <button onclick="addFoodItem()" class="btn btn-assign">Add Item</button>
+    </div>
+  `;
+  openModal(html);
+}
+
+/* escape quotes for inline onclick string */
+function escapeQuotes(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'\\"'); }
+
+function addFoodItem(){
+  const cat = document.getElementById('foodCategory').value.trim();
+  const name = document.getElementById('foodName').value.trim();
+  const price = document.getElementById('foodPrice').value.trim();
+  if(!cat || !name) { alert('Category and item required'); return; }
+  const menu = getFood();
+  if(!menu[cat]) menu[cat] = [];
+  menu[cat].push({name, price});
+  setFood(menu);
+  closeModal();
+  alert('Food item added');
+}
+
+/* Remove food item */
+function removeFoodItem(category, idx){
+  const menu = getFood();
+  if(!menu[category]) return;
+  menu[category].splice(idx,1);
+  if(menu[category].length === 0) delete menu[category];
+  setFood(menu);
+  // refresh modal content
+  openFoodMenuModal();
+}
+
+/* ===========================
+   Settings modal (edit staff list)
+   =========================== */
+function openSettingsModal(){
+  const staff = getStaff();
+  openModal(`
+    <h3 style="margin:0 0 8px">Settings</h3>
+    <div style="margin-bottom:8px;font-size:13px;color:#64748b">Edit staff list (name:category comma separated)</div>
+    <div><input id="setStaffInput" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e6edf6" value="${staff.map(s=>s.name+':'+s.category).join(',')}" /></div>
+    <div style="text-align:right;margin-top:10px">
+      <button class="btn btn-ghost" onclick="closeModal()" style="margin-right:8px">Cancel</button>
+      <button class="btn btn-assign" onclick="saveSettings()">Save</button>
+    </div>
+  `);
+}
+function saveSettings(){
+  const txt = document.getElementById('setStaffInput').value.trim();
+  const arr = txt ? txt.split(',').map(item => {
+    const [name,category] = item.split(':').map(p => p.trim());
+    return {name: name || 'Unknown', category: category || 'Housekeeping'};
+  }) : [];
+  setStaff(arr);
+  populateStaffFilter();
+  closeModal();
+}
+
+/* ===========================
+   Utilities & init
+   =========================== */
+document.getElementById('clearSearch').addEventListener('click', ()=>{
+  document.getElementById('searchInput').value = '';
+  renderTable();
+});
+document.getElementById('searchInput').addEventListener('input', renderTable);
+document.getElementById('staffFilter').addEventListener('change', renderTable);
+document.getElementById('categoryFilter').addEventListener('change', renderTable);
+document.getElementById('statusFilter').addEventListener('change', renderTable);
+document.getElementById('refreshBtn').addEventListener('click', ()=>{
+  populateStaffFilter();
+  renderTable();
+});
+
+/* ensure default staff/food exist (non-destructive) */
+(function seedIfEmpty(){
+  if(!localStorage.getItem('staffList')) {
+    setStaff([{name:'Raj',category:'Housekeeping'},{name:'Sita',category:'Housekeeping'},{name:'Amit',category:'Travel'}]);
+  }
+  if(!localStorage.getItem('foodMenu')){
+    setFood({'Snacks': [{name:'Tea',price:'20'},{name:'Cookies',price:'40'}]});
+  }
+  // sample requests can remain from earlier data
+})();
+
+/* initial population */
+populateStaffFilter();
+renderTable();
+
+/* expose some functions to global for modal buttons */
+window.openAddStaffModal = openAddStaffModal;
+window.openFoodMenuModal = openFoodMenuModal;
+window.openSettingsModal = openSettingsModal;
+window.addStaff = addStaff;
+window.addFoodItem = addFoodItem;
+window.removeFoodItem = removeFoodItem;
+window.saveSettings = saveSettings;
+
+</script>
 </body>
 </html>
