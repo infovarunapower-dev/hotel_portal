@@ -26,7 +26,6 @@
       min-width:20px;height:20px;padding:0 6px;border-radius:999px;
       background:#ef4444;color:#fff;font-weight:700;font-size:12px;line-height:20px;text-align:center;margin-left:8px;
     }
-    .select-item, .add-cart { cursor:pointer; }
   </style>
 </head>
 
@@ -87,7 +86,7 @@
 
     <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-2"></h2>
 
-    <!-- Selected service preview (appears after user clicks an option) -->
+    <!-- Selected service preview (appears after user clicks an option for housekeeping/travel) -->
     <div id="selectedPreview" class="mb-4" style="display:none;">
       <div>Selected:</div>
       <div id="selectedService" class="selected-pill"></div>
@@ -95,14 +94,17 @@
 
     <div id="optionsList" class="flex flex-col gap-4 mb-6"></div>
 
+    <!-- Schedule & details form (only used for non-food categories) -->
     <form id="requestForm" class="space-y-4">
-      <label class="small-muted">Schedule</label>
+      <div id="scheduleBlock">
+        <label class="small-muted">Schedule</label>
 
-      <div id="scheduleControls" class="flex gap-3 items-center">
-        <input id="scheduleDate" type="date" class="border w-48 p-2 rounded" />
-        <input id="scheduleTime" type="time" class="border w-36 p-2 rounded" />
-        <button id="asapBtn" type="button" class="px-3 py-2 rounded border">ASAP</button>
-        <div class="small-muted">Or choose date & time</div>
+        <div id="scheduleControls" class="flex gap-3 items-center">
+          <input id="scheduleDate" type="date" class="border w-48 p-2 rounded" />
+          <input id="scheduleTime" type="time" class="border w-36 p-2 rounded" />
+          <button id="asapBtn" type="button" class="px-3 py-2 rounded border">ASAP</button>
+          <div class="small-muted">Or choose date & time</div>
+        </div>
       </div>
 
       <textarea id="requestDetails" placeholder="Additional details..." class="border w-full p-3 rounded-md"></textarea>
@@ -158,8 +160,7 @@
 </div>
 
 <script>
-/* ====== FROM ORIGINAL — plus food->cart multi-select & badge ====== */
-
+/* ========= Core data & helpers ========= */
 (function ensureSampleMenu(){
   try {
     if(!localStorage.getItem('foodMenu')) {
@@ -184,7 +185,7 @@ const services = {
   food: { title: '🍽️ Food Menu', dynamic: true }
 };
 
-/* ---------- CART FUNCTIONS (shared with food.html behavior) ---------- */
+/* ---------- CART FUNCTIONS ---------- */
 function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
 function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); updateCartBadge(); }
 function addToCart(name,price){
@@ -239,12 +240,12 @@ function renderCart(){
   updateCartBadge();
 }
 
-/* ---------- UI: show section and render options ---------- */
+/* ---------- SECTION UI & OPTIONS RENDERING ---------- */
 function showSection(category){
   currentCategory = category;
   currentService = '';
 
-  // update tiles highlight
+  // tile highlight
   document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
   const optBtn = document.getElementById('opt-' + category);
   if(optBtn) optBtn.classList.add('selected');
@@ -254,12 +255,18 @@ function showSection(category){
   $('categorySection').classList.remove('hidden');
   $('categoryTitle').innerText = section.title;
 
+  // clear selection preview by default
   hideSelectedPreview();
 
   const list = $('optionsList');
   list.innerHTML = '';
 
   if(section.dynamic){
+    // FOOD: only Add to Cart; do not show selection preview or schedule
+    hideSelectedPreview();
+    // Hide schedule block (food uses cart => orders from cart)
+    $('scheduleBlock').style.display = 'none';
+
     let menu = JSON.parse(localStorage.getItem('foodMenu')||'{}');
 
     Object.keys(menu).forEach(cat => {
@@ -276,16 +283,8 @@ function showSection(category){
             <div class="font-semibold">${item.name}</div>
             <div class="text-sm text-gray-600">₹${item.price}</div>
           </div>
-          <div class="flex gap-2">
-            <button class="bg-indigo-500 text-white px-3 py-1 rounded select-item">Select</button>
-            <button class="bg-green-600 text-white px-3 py-1 rounded add-cart">Add to Cart</button>
-          </div>
+          <button class="bg-green-600 text-white px-4 py-2 rounded add-cart">Add to Cart</button>
         `;
-        // Select now sets preview and also adds to cart (multi-select)
-        row.querySelector('.select-item').addEventListener('click', ()=> {
-          setSelectedService(item.name);
-          addToCart(item.name, Number(item.price));
-        });
         row.querySelector('.add-cart').addEventListener('click', ()=> addToCart(item.name, Number(item.price)));
         list.appendChild(row);
       });
@@ -293,12 +292,16 @@ function showSection(category){
     return;
   }
 
+  // For non-food categories (housekeeping/travel) - show schedule block and selection preview
+  $('scheduleBlock').style.display = 'block';
+
   section.options.forEach(opt=>{
     const btn = document.createElement('button');
     btn.className = 'bg-gray-100 hover:bg-blue-200 font-semibold py-3 rounded-lg option-choice';
     btn.innerText = opt;
     btn.onclick = ()=> {
       setSelectedService(opt);
+      // visual highlight for option clicked
       list.querySelectorAll('.option-choice').forEach(b=>b.classList.remove('selected'));
       btn.classList.add('selected');
     };
@@ -338,7 +341,7 @@ function setSelectedService(serviceName){
 function hideSelectedPreview(){ $('selectedPreview').style.display='none'; $('selectedService').innerText=''; }
 function clearSelectedService(){ currentService=''; hideSelectedPreview(); $('requestDetails').value=''; $('scheduleDate').value=''; $('scheduleTime').value=''; isASAP=false; $('asapBtn').classList.remove('bg-green-100'); }
 
-/* ---------- schedule controls ---------- */
+/* ---------- schedule controls for non-food ---------- */
 let isASAP = false;
 $('asapBtn').addEventListener('click', ()=>{
   isASAP = !isASAP;
@@ -353,11 +356,17 @@ $('asapBtn').addEventListener('click', ()=>{
   }
 });
 
-/* ---------- request submit ---------- */
+/* ---------- submit request for non-food (uses selected service + schedule) ---------- */
 $('requestForm').onsubmit = function(e){
   e.preventDefault();
+  // If currently viewing food section, scheduleBlock is hidden and submit should not happen here
+  if(currentCategory === 'food'){
+    alert('To order food, please add items to cart and place order from the cart.');
+    return;
+  }
+
   if(!currentService){
-    alert('Please select a service / item first.');
+    alert('Please select a service first.');
     return;
   }
   const details = $('requestDetails').value.trim();
@@ -401,16 +410,31 @@ $('requestForm').onsubmit = function(e){
   });
 };
 
-/* ---------- CART UI actions ---------- */
+/* ---------- CART: order from cart (food) ---------- */
 $('cartBtn').addEventListener('click', ()=>{ $('cartPanel').style.transform='translateX(0)'; renderCart(); });
 $('closeCartBtn').addEventListener('click', ()=>{ $('cartPanel').style.transform='translateX(100%)'; });
 $('clearCartBtn').addEventListener('click', ()=>{ if(confirm('Clear cart?')) clearCart(); });
 
-$('cartPanel').addEventListener('click', (e)=>{
+document.addEventListener('click', function(e){
   const t = e.target;
-  if(t.classList.contains('inc')) changeQty(Number(t.dataset.i), 1);
-  if(t.classList.contains('dec')) changeQty(Number(t.dataset.i), -1);
-  if(t.classList.contains('del')) { let idx = Number(t.dataset.i); let cart=getCart(); cart.splice(idx,1); setCart(cart); renderCart(); }
+  // decrement
+  if(t.classList.contains('dec')){
+    const idx = Number(t.dataset.i);
+    changeQty(idx, -1);
+  }
+  // increment
+  if(t.classList.contains('inc')){
+    const idx = Number(t.dataset.i);
+    changeQty(idx, 1);
+  }
+  // remove
+  if(t.classList.contains('del')){
+    const idx = Number(t.dataset.i);
+    let cart = getCart();
+    cart.splice(idx,1);
+    setCart(cart);
+    renderCart();
+  }
 });
 
 /* place order from cart */
@@ -418,7 +442,6 @@ $('placeOrderBtn').addEventListener('click', ()=>{
   const cart = getCart();
   if(!cart.length) return alert('Cart is empty!');
   let subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
-  // confirm room
   const room = prompt('Enter Room Number');
   if(!room) return;
   const details = cart.map(i=>`${i.name} × ${i.qty}`).join('; ');
@@ -437,14 +460,7 @@ $('placeOrderBtn').addEventListener('click', ()=>{
   alert('Order placed!');
 });
 
-/* cart panel event delegation for +/-/remove */
-document.addEventListener('click', function(e){
-  const t = e.target;
-  if(t.matches('#cartItems .inc')) { changeQty(Number(t.dataset.i),1); }
-  if(t.matches('#cartItems .dec')) { changeQty(Number(t.dataset.i),-1); }
-});
-
-/* renderCart helper uses buttons with classes inc/dec/del and data-i; implement accordingly */
+/* ---------- renderCart helper (delegates to buttons created earlier) ---------- */
 function renderCart(){
   const cart = getCart();
   const container = $('cartItems');
@@ -471,18 +487,15 @@ function renderCart(){
   updateCartBadge();
 }
 
-/* helper: updateCartBadge already defined above; ensure it's called on load */
-function init(){
+/* Init */
+document.addEventListener('DOMContentLoaded', function(){
   renderCart();
   updateCartBadge();
-  // clear schedule inputs initially
-  $('scheduleDate').value = '';
-  $('scheduleTime').value = '';
-}
+  // start with schedule controls cleared
+  try { $('scheduleDate').value = ''; $('scheduleTime').value = ''; } catch(e){}
+});
 
-document.addEventListener('DOMContentLoaded', init);
-
-/* modal helpers (unchanged) */
+/* Modal helpers */
 function openModal(html){ $('modalBox').innerHTML = html; $('modalBackdrop').style.display='flex'; }
 function closeModal(){ $('modalBackdrop').style.display='none'; $('modalBox').innerHTML=''; }
 function openRoomModal(opts){
