@@ -31,71 +31,64 @@
 
 <body class="bg-gradient-to-br from-blue-100 via-white to-blue-200 min-h-screen p-6 flex flex-col justify-between">
 
+<!-- HEADER -->
 <div class="text-center mb-6">
-  <h1 class="text-3xl font-extrabold text-gray-800">
-    🌴 Spice De Morjim
-  </h1>
-
-  <p class="text-gray-700 text-sm mt-1">
-    📞 6363678898 &nbsp; | &nbsp; 📧 vinay@gmail.com
-  </p>
-
-  <p class="text-gray-700 text-sm">
-    📍 House No 1049, Madla Wada, Morjim, Goa 403512
-  </p>
+  <h1 class="text-3xl font-extrabold text-gray-800">🌴 Spice De Morjim</h1>
+  <p class="text-gray-700 text-sm mt-1">📞 6363678898 &nbsp; | &nbsp; 📧 vinay@gmail.com</p>
+  <p class="text-gray-700 text-sm">📍 House No 1049, Madla Wada, Morjim, Goa 403512</p>
 </div>
 
+<!-- HOME BUTTON -->
 <a id="homeBtn" href="index.html"
    class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hover:bg-gray-100 transition">
   🏠 Home
 </a>
 
+<!-- MAIN -->
 <div id="mainPortal" class="flex flex-col items-center">
 
   <h1 id="welcomeText" class="text-3xl font-bold text-gray-800 mt-4 mb-6">
     Welcome, Guest
   </h1>
 
+  <!-- MENU BUTTONS -->
   <div id="mainMenu" class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl mx-auto">
 
-    <!-- HOUSEKEEPING -->
     <button id="opt-housekeeping" onclick="showSection('housekeeping')"
       class="option-btn bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
-      🧹
-      <h2 class="text-xl font-semibold mt-2">Housekeeping</h2>
+      🧹<h2 class="text-xl font-semibold mt-2">Housekeeping</h2>
     </button>
 
-    <!-- TRAVEL -->
     <button id="opt-travel" onclick="showSection('travel')"
       class="option-btn bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
-      🚗
-      <h2 class="text-xl font-semibold mt-2">Travel</h2>
+      🚗<h2 class="text-xl font-semibold mt-2">Travel</h2>
     </button>
 
-    <!-- FOOD MENU -->
     <button id="opt-food" onclick="showSection('food')"
       class="option-btn bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
-      🍽️
-      <h2 class="text-xl font-semibold mt-2">Food Menu</h2>
+      🍽️<h2 class="text-xl font-semibold mt-2">Food Menu</h2>
     </button>
 
   </div>
 
+  <!-- CATEGORY SECTION -->
   <div id="categorySection"
        class="hidden w-full max-w-4xl bg-white p-8 mt-10 rounded-2xl shadow-xl relative">
 
     <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-2"></h2>
 
-    <!-- Selected service preview (appears after user clicks an option for housekeeping/travel) -->
+    <!-- Selected service preview -->
     <div id="selectedPreview" class="mb-4" style="display:none;">
       <div>Selected:</div>
       <div id="selectedService" class="selected-pill"></div>
     </div>
 
+    <!-- Option list (dynamic) -->
     <div id="optionsList" class="flex flex-col gap-4 mb-6"></div>
 
-    <!-- Schedule & details form (only used for non-food categories) -->
+    <!-- Scheduling form (ONLY for housekeeping/travel) -->
     <form id="requestForm" class="space-y-4">
+
       <div id="scheduleBlock">
         <label class="small-muted">Schedule</label>
 
@@ -109,28 +102,27 @@
 
       <textarea id="requestDetails" placeholder="Additional details..." class="border w-full p-3 rounded-md"></textarea>
 
+      <!-- Submit -->
       <div class="flex gap-2">
         <button id="submitRequestBtn" type="submit"
                 class="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 flex-1">
           Submit Request
         </button>
 
-        <button type="button" onclick="goBack()" class="text-gray-500 underline px-4 py-3">
-          ⬅ Back
-        </button>
+        <button type="button" onclick="goBack()" class="text-gray-500 underline px-4 py-3">⬅ Back</button>
       </div>
     </form>
 
   </div>
-
 </div>
 
-<!-- Floating cart button with badge -->
-<button id="cartBtn" title="Open cart" style="position:fixed; bottom:20px; right:20px; background:#2563eb; color:#fff; border:none; padding:12px 16px; border-radius:999px; box-shadow:0 6px 18px rgba(0,0,0,0.12); cursor:pointer;">
+<!-- CART BUTTON -->
+<button id="cartBtn" title="Open cart"
+  style="position:fixed; bottom:20px; right:20px; background:#2563eb; color:#fff; padding:12px 16px; border-radius:999px; box-shadow:0 6px 18px rgba(0,0,0,0.12); cursor:pointer;">
   🛒 Cart <span id="cartCount" class="cart-badge" style="display:none">0</span>
 </button>
 
-<!-- Cart Panel -->
+<!-- CART PANEL -->
 <aside id="cartPanel"
        class="cart-panel fixed top-0 right-0 h-full w-96 transform translate-x-full z-50 bg-white shadow-2xl p-6 overflow-auto">
 
@@ -152,369 +144,348 @@
       <button id="clearCartBtn" class="mt-2 bg-gray-200 text-gray-700 py-2 rounded-md">Clear Cart</button>
     </div>
   </div>
-
 </aside>
 
+<!-- MODAL -->
 <div id="modalBackdrop" class="modal-backdrop">
   <div id="modalBox" class="modal"></div>
 </div>
 
 <script>
-/* ========= Core data & helpers ========= */
-(function ensureSampleMenu(){
-  try {
-    if(!localStorage.getItem('foodMenu')) {
-      const sample = {
-        "Breakfast":[{name:"Idli",price:"60"},{name:"Dosa",price:"80"}],
-        "Lunch":[{name:"Veg Thali",price:"150"}],
-        "Snacks":[{name:"French Fries",price:"120"}]
-      };
-      localStorage.setItem('foodMenu', JSON.stringify(sample));
-    }
-  } catch(e){}
-})();
-
+/* ===========================================================
+   BASIC HELPERS
+=========================================================== */
 const $ = id => document.getElementById(id);
 
-let currentCategory = '';
-let currentService = '';
+function getCart(){ return JSON.parse(localStorage.getItem("cart") || "[]"); }
+function setCart(c){ localStorage.setItem("cart", JSON.stringify(c)); updateCartBadge(); }
+
+/* Load food menu */
+function loadFoodMenu(){
+  try { return JSON.parse(localStorage.getItem("foodMenu") || "{}"); }
+  catch(e){ return {}; }
+}
+
+/* Save food menu (admin edits trigger this) */
+window.addEventListener("storage", e => {
+  if(e.key === "foodMenu" || e.key === "foodMenu_updated_at"){
+    if(currentCategory === "food"){
+      showSection("food"); // refresh instantly
+    }
+  }
+});
+
+/* ===========================================================
+   MAIN MENU HANDLING
+=========================================================== */
+let currentCategory = "";
+let currentService = "";
+let isASAP = false;
 
 const services = {
-  housekeeping: { title: '🧹 Housekeeping Services', options: ['Room Cleaning','Laundry Service','Extra Towels','Room Supplies','Other Requests'] },
-  travel: { title: '🚗 Travel Assistance', options: ['Airport Pickup','Local Cab','Tour Guide','Car Rental','Other Travel Help'] },
-  food: { title: '🍽️ Food Menu', dynamic: true }
+  housekeeping: {
+    title: "🧹 Housekeeping Services",
+    options: [
+      "Room Cleaning","Laundry Service","Extra Towels",
+      "Room Supplies","Other Requests"
+    ]
+  },
+  travel: {
+    title: "🚗 Travel Assistance",
+    options: [
+      "Airport Pickup","Local Cab","Tour Guide",
+      "Car Rental","Other Travel Help"
+    ]
+  },
+  food: {
+    title: "🍽 Food Menu", dynamic: true
+  }
 };
 
-/* ---------- CART FUNCTIONS ---------- */
-function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
-function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); updateCartBadge(); }
-function addToCart(name,price){
-  let cart = getCart();
-  let f = cart.find(x=>x.name===name && x.price===price);
-  if(f) f.qty++; else cart.push({name,price,qty:1});
-  setCart(cart);
-  renderCart();
-}
-function changeQty(index, delta){
-  let cart=getCart();
-  if(!cart[index]) return;
-  cart[index].qty += delta;
-  if(cart[index].qty <= 0) cart.splice(index,1);
-  setCart(cart);
-  renderCart();
-}
-function clearCart(){ setCart([]); renderCart(); }
-
-/* update floating badge with total quantity */
-function updateCartBadge(){
-  const cart = getCart();
-  const total = cart.reduce((s,i)=>s+i.qty,0);
-  const el = $('cartCount');
-  if(total>0){ el.style.display='inline-block'; el.innerText = total; }
-  else { el.style.display='none'; }
-}
-
-/* render cart panel */
-function renderCart(){
-  const cart = getCart();
-  const container = $('cartItems');
-  container.innerHTML = '';
-  let subtotal = 0;
-  cart.forEach((it,i)=>{
-    subtotal += it.qty * it.price;
-    container.insertAdjacentHTML('beforeend', `
-      <div class="flex justify-between bg-gray-100 p-3 rounded">
-        <div>
-          <div class="font-semibold">${it.name}</div>
-          <div class="text-sm text-gray-600">₹${it.price} × ${it.qty}</div>
-        </div>
-        <div class="flex items-center gap-2">
-          <button class="px-3 py-1 bg-gray-200 dec" data-i="${i}">-</button>
-          <button class="px-3 py-1 bg-gray-200 inc" data-i="${i}">+</button>
-          <button class="text-red-600 del" data-i="${i}">Remove</button>
-        </div>
-      </div>
-    `);
-  });
-  $('cartSubtotal').innerText = '₹'+subtotal;
-  updateCartBadge();
-}
-
-/* ---------- SECTION UI & OPTIONS RENDERING ---------- */
 function showSection(category){
   currentCategory = category;
-  currentService = '';
-
-  // tile highlight
-  document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
-  const optBtn = document.getElementById('opt-' + category);
-  if(optBtn) optBtn.classList.add('selected');
-
-  const section = services[category];
+  currentService = "";
   $('mainMenu').classList.add('hidden');
   $('categorySection').classList.remove('hidden');
-  $('categoryTitle').innerText = section.title;
-
-  // clear selection preview by default
+  $('categoryTitle').innerText = services[category].title;
+  $('scheduleBlock').style.display = category === "food" ? "none" : "block";
   hideSelectedPreview();
 
+  renderOptions(category);
+}
+
+/* Back button */
+function goBack(){
+  $('mainMenu').classList.remove('hidden');
+  $('categorySection').classList.add('hidden');
+  hideSelectedPreview();
+}
+
+/* ===========================================================
+   OPTION RENDERING
+=========================================================== */
+function renderOptions(category){
   const list = $('optionsList');
-  list.innerHTML = '';
+  list.innerHTML = "";
 
-  if(section.dynamic){
-    // FOOD: only Add to Cart; do not show selection preview or schedule
-    hideSelectedPreview();
-    // Hide schedule block (food uses cart => orders from cart)
-    $('scheduleBlock').style.display = 'none';
-
-    let menu = JSON.parse(localStorage.getItem('foodMenu')||'{}');
-
+  if(category === "food"){
+    // FOOD: ONLY ADD TO CART
+    const menu = loadFoodMenu();
     Object.keys(menu).forEach(cat => {
-      const h = document.createElement('h3');
-      h.className='text-lg font-bold text-gray-700 mt-6';
+      const h = document.createElement("h3");
+      h.className = "text-lg font-bold text-gray-700 mt-6";
       h.innerText = cat;
       list.appendChild(h);
 
-      (menu[cat]||[]).forEach(item=>{
-        const row = document.createElement('div');
-        row.className='flex items-center justify-between bg-gray-100 p-4 rounded-lg';
+      menu[cat].forEach(item=>{
+        const row = document.createElement("div");
+        row.className = "flex justify-between bg-gray-100 p-4 rounded-lg";
         row.innerHTML = `
           <div>
             <div class="font-semibold">${item.name}</div>
             <div class="text-sm text-gray-600">₹${item.price}</div>
           </div>
-          <button class="bg-green-600 text-white px-4 py-2 rounded add-cart">Add to Cart</button>
+          <button class="bg-green-600 text-white px-4 py-2 rounded">Add to Cart</button>
         `;
-        row.querySelector('.add-cart').addEventListener('click', ()=> addToCart(item.name, Number(item.price)));
+        row.querySelector("button").onclick = ()=> addToCart(item.name, Number(item.price));
         list.appendChild(row);
       });
     });
     return;
   }
 
-  // For non-food categories (housekeeping/travel) - show schedule block and selection preview
-  $('scheduleBlock').style.display = 'block';
-
-  section.options.forEach(opt=>{
-    const btn = document.createElement('button');
-    btn.className = 'bg-gray-100 hover:bg-blue-200 font-semibold py-3 rounded-lg option-choice';
+  // NON-FOOD: selection + schedule UI
+  services[category].options.forEach(opt=>{
+    const btn = document.createElement("button");
+    btn.className = "bg-gray-100 hover:bg-blue-200 font-semibold py-3 rounded-lg option-choice";
     btn.innerText = opt;
     btn.onclick = ()=> {
-      setSelectedService(opt);
-      // visual highlight for option clicked
-      list.querySelectorAll('.option-choice').forEach(b=>b.classList.remove('selected'));
-      btn.classList.add('selected');
+      currentService = opt;
+      showSelectedPreview(opt);
     };
     list.appendChild(btn);
   });
 }
 
-/* go back to main menu */
-function goBack(){
-  $('mainMenu').classList.remove('hidden');
-  $('categorySection').classList.add('hidden');
-  clearSelectedService();
+/* ===========================================================
+   PREVIEW SELECTED OPTION
+=========================================================== */
+function showSelectedPreview(text){
+  $('selectedPreview').style.display = "block";
+  $('selectedService').innerText = text;
+}
+function hideSelectedPreview(){
+  $('selectedPreview').style.display = "none";
+  $('selectedService').innerText = "";
 }
 
-/* selection preview */
-function setSelectedService(serviceName){
-  currentService = serviceName;
-  $('selectedService').innerText = serviceName;
-  $('selectedPreview').style.display = 'block';
-  isASAP = false;
-  $('asapBtn').classList.remove('bg-green-100');
-  $('scheduleDate').disabled = false;
-  $('scheduleTime').disabled = false;
-
-  // prefill schedule 30 minutes from now if empty
-  try {
-    const now = new Date();
-    const plus30 = new Date(now.getTime() + 30*60000);
-    if(!$('scheduleDate').value) $('scheduleDate').value = plus30.toISOString().slice(0,10);
-    if(!$('scheduleTime').value){
-      const hh = String(plus30.getHours()).padStart(2,'0');
-      const mm = String(plus30.getMinutes()).padStart(2,'0');
-      $('scheduleTime').value = hh + ':' + mm;
-    }
-  } catch(e){}
-}
-function hideSelectedPreview(){ $('selectedPreview').style.display='none'; $('selectedService').innerText=''; }
-function clearSelectedService(){ currentService=''; hideSelectedPreview(); $('requestDetails').value=''; $('scheduleDate').value=''; $('scheduleTime').value=''; isASAP=false; $('asapBtn').classList.remove('bg-green-100'); }
-
-/* ---------- schedule controls for non-food ---------- */
-let isASAP = false;
-$('asapBtn').addEventListener('click', ()=>{
+/* ===========================================================
+   SCHEDULE CONTROLS
+=========================================================== */
+$('asapBtn').onclick = ()=>{
   isASAP = !isASAP;
-  if(isASAP){
-    $('asapBtn').classList.add('bg-green-100');
-    $('scheduleDate').disabled = true;
-    $('scheduleTime').disabled = true;
-  } else {
-    $('asapBtn').classList.remove('bg-green-100');
-    $('scheduleDate').disabled = false;
-    $('scheduleTime').disabled = false;
-  }
-});
+  $('asapBtn').classList.toggle("bg-green-100", isASAP);
+  $('scheduleDate').disabled = isASAP;
+  $('scheduleTime').disabled = isASAP;
+};
 
-/* ---------- submit request for non-food (uses selected service + schedule) ---------- */
+/* ===========================================================
+   SUBMIT NON-FOOD REQUEST
+=========================================================== */
 $('requestForm').onsubmit = function(e){
   e.preventDefault();
-  // If currently viewing food section, scheduleBlock is hidden and submit should not happen here
-  if(currentCategory === 'food'){
-    alert('To order food, please add items to cart and place order from the cart.');
+
+  if(currentCategory === "food"){
+    alert("To order food, use the Cart.");
+    return;
+  }
+  if(!currentService){
+    alert("Please select a service.");
     return;
   }
 
-  if(!currentService){
-    alert('Please select a service first.');
-    return;
-  }
-  const details = $('requestDetails').value.trim();
-  let scheduled_at = null;
-  if(isASAP) scheduled_at = 'ASAP';
+  let schedule;
+  if(isASAP) schedule = "ASAP";
   else {
     const d = $('scheduleDate').value;
     const t = $('scheduleTime').value;
-    if(d && t) scheduled_at = new Date(d + 'T' + t).toISOString();
-    else scheduled_at = 'ASAP';
+    schedule = (d && t) ? new Date(d+"T"+t).toISOString() : "ASAP";
   }
 
-  const req = {
-    type: currentCategory,
-    service: currentService || 'General Request',
-    name: 'Guest',
-    room:'',
-    details,
-    status:'Pending',
-    assigned_to:'',
-    time:new Date().toLocaleString(),
-    created_at:new Date().toISOString(),
-    scheduled_at: scheduled_at
-  };
-
+  // Ask room #
   openRoomModal({
-    title:'Confirm Room Number',
-    hint:'Enter room number',
-    confirmText:'Confirm & Send',
+    title:"Confirm Room Number",
+    hint:"Enter room number",
+    confirmText:"Send",
     onConfirm:(room)=>{
-      req.room = room;
-      const all = JSON.parse(localStorage.getItem('requests')||'[]');
+      const req = {
+        type: currentCategory,
+        service: currentService,
+        name: "Guest",
+        room,
+        details: $('requestDetails').value.trim(),
+        status:"Pending",
+        assigned_to:"",
+        time:new Date().toLocaleString(),
+        created_at:new Date().toISOString(),
+        scheduled_at: schedule
+      };
+      const all = JSON.parse(localStorage.getItem("requests") || "[]");
       all.push(req);
-      localStorage.setItem('requests', JSON.stringify(all));
-      closeModal();
-      alert('Request submitted!');
-      $('requestForm').reset();
-      clearSelectedService();
+      localStorage.setItem("requests", JSON.stringify(all));
+
+      alert("Request submitted!");
       goBack();
     }
   });
 };
 
-/* ---------- CART: order from cart (food) ---------- */
-$('cartBtn').addEventListener('click', ()=>{ $('cartPanel').style.transform='translateX(0)'; renderCart(); });
-$('closeCartBtn').addEventListener('click', ()=>{ $('cartPanel').style.transform='translateX(100%)'; });
-$('clearCartBtn').addEventListener('click', ()=>{ if(confirm('Clear cart?')) clearCart(); });
+/* ===========================================================
+   CART FUNCTIONS
+=========================================================== */
+function addToCart(name,price){
+  let c = getCart();
+  let row = c.find(x=>x.name===name && x.price===price);
+  if(row) row.qty++;
+  else c.push({name,price,qty:1});
+  setCart(c);
+  renderCart();
+}
+function renderCart(){
+  let cart = getCart();
+  $('cartItems').innerHTML = "";
+  let total = 0;
 
-document.addEventListener('click', function(e){
-  const t = e.target;
-  // decrement
-  if(t.classList.contains('dec')){
-    const idx = Number(t.dataset.i);
-    changeQty(idx, -1);
+  cart.forEach((it,i)=>{
+    total += it.qty * it.price;
+    $('cartItems').innerHTML += `
+      <div class="flex justify-between bg-gray-100 p-3 rounded">
+        <div>
+          <div class="font-semibold">${it.name}</div>
+          <div class="text-sm text-gray-600">₹${it.price} × ${it.qty}</div>
+        </div>
+        <div class="flex gap-2 items-center">
+          <button class="px-3 py-1 bg-gray-200 dec" data-i="${i}">-</button>
+          <button class="px-3 py-1 bg-gray-200 inc" data-i="${i}">+</button>
+          <button class="text-red-600 del" data-i="${i}">Remove</button>
+        </div>
+      </div>
+    `;
+  });
+
+  $('cartSubtotal').innerText = "₹" + total;
+  updateCartBadge();
+}
+function updateCartBadge(){
+  const c = getCart();
+  const count = c.reduce((s,i)=>s+i.qty,0);
+  if(count > 0){
+    $('cartCount').style.display = "inline-block";
+    $('cartCount').innerText = count;
+  } else {
+    $('cartCount').style.display = "none";
   }
-  // increment
-  if(t.classList.contains('inc')){
-    const idx = Number(t.dataset.i);
-    changeQty(idx, 1);
+}
+
+$('cartBtn').onclick = ()=>{ $('cartPanel').style.transform="translateX(0)"; renderCart(); };
+$('closeCartBtn').onclick = ()=>{ $('cartPanel').style.transform="translateX(100%)"; };
+$('clearCartBtn').onclick = ()=>{ localStorage.removeItem("cart"); renderCart(); };
+
+document.addEventListener("click", e=>{
+  if(e.target.classList.contains("inc")){
+    changeQty(Number(e.target.dataset.i), +1);
   }
-  // remove
-  if(t.classList.contains('del')){
-    const idx = Number(t.dataset.i);
+  if(e.target.classList.contains("dec")){
+    changeQty(Number(e.target.dataset.i), -1);
+  }
+  if(e.target.classList.contains("del")){
     let cart = getCart();
-    cart.splice(idx,1);
+    cart.splice(Number(e.target.dataset.i),1);
     setCart(cart);
     renderCart();
   }
 });
 
-/* place order from cart */
-$('placeOrderBtn').addEventListener('click', ()=>{
-  const cart = getCart();
-  if(!cart.length) return alert('Cart is empty!');
-  let subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
-  const room = prompt('Enter Room Number');
-  if(!room) return;
-  const details = cart.map(i=>`${i.name} × ${i.qty}`).join('; ');
-  const req = {
-    type:'Food',service:'Order',name:'Guest',room,
-    details, status:'Pending',assigned_to:'',
-    time:new Date().toLocaleString(),
-    created_at:new Date().toISOString(),
-    scheduled_at:'ASAP'
-  };
-  let all = JSON.parse(localStorage.getItem('requests')||'[]');
-  all.push(req);
-  localStorage.setItem('requests', JSON.stringify(all));
-  clearCart();
-  $('cartPanel').style.transform='translateX(100%)';
-  alert('Order placed!');
-});
-
-/* ---------- renderCart helper (delegates to buttons created earlier) ---------- */
-function renderCart(){
-  const cart = getCart();
-  const container = $('cartItems');
-  container.innerHTML = '';
-  let subtotal=0;
-  cart.forEach((it,i)=>{
-    subtotal += it.price*it.qty;
-    const div = document.createElement('div');
-    div.className = 'flex justify-between bg-gray-100 p-3 rounded';
-    div.innerHTML = `
-      <div>
-        <div class="font-semibold">${it.name}</div>
-        <div class="text-sm text-gray-600">₹${it.price} × ${it.qty}</div>
-      </div>
-      <div class="flex items-center gap-2">
-        <button class="px-3 py-1 bg-gray-200 dec" data-i="${i}">-</button>
-        <button class="px-3 py-1 bg-gray-200 inc" data-i="${i}">+</button>
-        <button class="text-red-600 del" data-i="${i}">Remove</button>
-      </div>
-    `;
-    container.appendChild(div);
-  });
-  $('cartSubtotal').innerText = '₹'+subtotal;
-  updateCartBadge();
+function changeQty(i,delta){
+  let cart = getCart();
+  if(cart[i]){
+    cart[i].qty += delta;
+    if(cart[i].qty <= 0) cart.splice(i,1);
+    setCart(cart);
+    renderCart();
+  }
 }
 
-/* Init */
-document.addEventListener('DOMContentLoaded', function(){
-  renderCart();
-  updateCartBadge();
-  // start with schedule controls cleared
-  try { $('scheduleDate').value = ''; $('scheduleTime').value = ''; } catch(e){}
-});
+/* PLACE FOOD ORDER */
+$('placeOrderBtn').onclick = ()=>{
+  const cart = getCart();
+  if(!cart.length) return alert("Cart is empty.");
 
-/* Modal helpers */
-function openModal(html){ $('modalBox').innerHTML = html; $('modalBackdrop').style.display='flex'; }
-function closeModal(){ $('modalBackdrop').style.display='none'; $('modalBox').innerHTML=''; }
+  const room = prompt("Enter room number:");
+  if(!room) return;
+
+  const details = cart.map(i=>`${i.name} × ${i.qty}`).join("; ");
+  const req = {
+    type:"Food",
+    service:"Order",
+    name:"Guest",
+    room,
+    details,
+    status:"Pending",
+    assigned_to:"",
+    time:new Date().toLocaleString(),
+    created_at:new Date().toISOString(),
+    scheduled_at:"ASAP"
+  };
+
+  let all = JSON.parse(localStorage.getItem("requests") || "[]");
+  all.push(req);
+  localStorage.setItem("requests", JSON.stringify(all));
+
+  localStorage.removeItem("cart");
+  renderCart();
+  $('cartPanel').style.transform="translateX(100%)";
+
+  alert("Order placed!");
+};
+
+/* ===========================================================
+   MODAL HELPERS
+=========================================================== */
+function openModal(html){
+  $('modalBox').innerHTML = html;
+  $('modalBackdrop').style.display = "flex";
+}
+function closeModal(){
+  $('modalBackdrop').style.display = "none";
+  $('modalBox').innerHTML = "";
+}
+
 function openRoomModal(opts){
-  let html = `
+  const html = `
     <h3 class="text-xl font-bold mb-3">${opts.title}</h3>
     <p class="text-sm text-gray-700 mb-2">${opts.hint}</p>
     <input id="roomInput" class="border w-full p-2 rounded" placeholder="Room number"/>
     <div class="flex justify-end gap-2 mt-4">
       <button id="rC" class="px-3 py-2 bg-gray-200 rounded">Cancel</button>
       <button id="rOK" class="px-3 py-2 bg-blue-600 text-white rounded">${opts.confirmText}</button>
-    </div>`;
+    </div>
+  `;
   openModal(html);
+
   $('rC').onclick = closeModal;
   $('rOK').onclick = ()=>{
     let room = $('roomInput').value.trim();
-    if(!room) return alert('Enter room number');
+    if(!room) return alert("Enter room number");
     opts.onConfirm(room);
+    closeModal();
   };
-}
+};
+
+/* INIT */
+document.addEventListener("DOMContentLoaded", ()=>{
+  updateCartBadge();
+});
 </script>
 
 <footer class="text-center text-gray-700 text-sm mt-8">
