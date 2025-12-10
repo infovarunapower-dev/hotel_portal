@@ -20,6 +20,13 @@
     .selected-pill { display:inline-block; background:#eef2ff; color:#1e3a8a; padding:6px 10px; border-radius:999px; font-weight:600; margin-top:8px; }
     .option-btn.selected { background:#bfdbfe; }
     .small-muted{ font-size:13px;color:#64748b }
+    /* Cart badge */
+    .cart-badge {
+      display:inline-block;
+      min-width:20px;height:20px;padding:0 6px;border-radius:999px;
+      background:#ef4444;color:#fff;font-weight:700;font-size:12px;line-height:20px;text-align:center;margin-left:8px;
+    }
+    .select-item, .add-cart { cursor:pointer; }
   </style>
 </head>
 
@@ -116,8 +123,12 @@
 
 </div>
 
-<div id="cartOverlay" class="fixed inset-0 z-40 hidden bg-black/40"></div>
+<!-- Floating cart button with badge -->
+<button id="cartBtn" title="Open cart" style="position:fixed; bottom:20px; right:20px; background:#2563eb; color:#fff; border:none; padding:12px 16px; border-radius:999px; box-shadow:0 6px 18px rgba(0,0,0,0.12); cursor:pointer;">
+  🛒 Cart <span id="cartCount" class="cart-badge" style="display:none">0</span>
+</button>
 
+<!-- Cart Panel -->
 <aside id="cartPanel"
        class="cart-panel fixed top-0 right-0 h-full w-96 transform translate-x-full z-50 bg-white shadow-2xl p-6 overflow-auto">
 
@@ -147,7 +158,7 @@
 </div>
 
 <script>
-/* ====== FROM ORIGINAL (kept) — plus selection+schedule handling ====== */
+/* ====== FROM ORIGINAL — plus food->cart multi-select & badge ====== */
 
 (function ensureSampleMenu(){
   try {
@@ -173,12 +184,67 @@ const services = {
   food: { title: '🍽️ Food Menu', dynamic: true }
 };
 
-/* Show section and render options */
+/* ---------- CART FUNCTIONS (shared with food.html behavior) ---------- */
+function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
+function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); updateCartBadge(); }
+function addToCart(name,price){
+  let cart = getCart();
+  let f = cart.find(x=>x.name===name && x.price===price);
+  if(f) f.qty++; else cart.push({name,price,qty:1});
+  setCart(cart);
+  renderCart();
+}
+function changeQty(index, delta){
+  let cart=getCart();
+  if(!cart[index]) return;
+  cart[index].qty += delta;
+  if(cart[index].qty <= 0) cart.splice(index,1);
+  setCart(cart);
+  renderCart();
+}
+function clearCart(){ setCart([]); renderCart(); }
+
+/* update floating badge with total quantity */
+function updateCartBadge(){
+  const cart = getCart();
+  const total = cart.reduce((s,i)=>s+i.qty,0);
+  const el = $('cartCount');
+  if(total>0){ el.style.display='inline-block'; el.innerText = total; }
+  else { el.style.display='none'; }
+}
+
+/* render cart panel */
+function renderCart(){
+  const cart = getCart();
+  const container = $('cartItems');
+  container.innerHTML = '';
+  let subtotal = 0;
+  cart.forEach((it,i)=>{
+    subtotal += it.qty * it.price;
+    container.insertAdjacentHTML('beforeend', `
+      <div class="flex justify-between bg-gray-100 p-3 rounded">
+        <div>
+          <div class="font-semibold">${it.name}</div>
+          <div class="text-sm text-gray-600">₹${it.price} × ${it.qty}</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="px-3 py-1 bg-gray-200 dec" data-i="${i}">-</button>
+          <button class="px-3 py-1 bg-gray-200 inc" data-i="${i}">+</button>
+          <button class="text-red-600 del" data-i="${i}">Remove</button>
+        </div>
+      </div>
+    `);
+  });
+  $('cartSubtotal').innerText = '₹'+subtotal;
+  updateCartBadge();
+}
+
+/* ---------- UI: show section and render options ---------- */
 function showSection(category){
   currentCategory = category;
   currentService = '';
 
-  // update UI highlight on the main tiles
+  // update tiles highlight
   document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
   const optBtn = document.getElementById('opt-' + category);
   if(optBtn) optBtn.classList.add('selected');
@@ -188,7 +254,6 @@ function showSection(category){
   $('categorySection').classList.remove('hidden');
   $('categoryTitle').innerText = section.title;
 
-  // clear selection preview
   hideSelectedPreview();
 
   const list = $('optionsList');
@@ -204,7 +269,6 @@ function showSection(category){
       list.appendChild(h);
 
       (menu[cat]||[]).forEach(item=>{
-        // each food row now has a "Select for scheduling" button and existing "Add to Cart"
         const row = document.createElement('div');
         row.className='flex items-center justify-between bg-gray-100 p-4 rounded-lg';
         row.innerHTML = `
@@ -217,9 +281,10 @@ function showSection(category){
             <button class="bg-green-600 text-white px-3 py-1 rounded add-cart">Add to Cart</button>
           </div>
         `;
-        // select to schedule this food item
+        // Select now sets preview and also adds to cart (multi-select)
         row.querySelector('.select-item').addEventListener('click', ()=> {
           setSelectedService(item.name);
+          addToCart(item.name, Number(item.price));
         });
         row.querySelector('.add-cart').addEventListener('click', ()=> addToCart(item.name, Number(item.price)));
         list.appendChild(row);
@@ -233,9 +298,7 @@ function showSection(category){
     btn.className = 'bg-gray-100 hover:bg-blue-200 font-semibold py-3 rounded-lg option-choice';
     btn.innerText = opt;
     btn.onclick = ()=> {
-      // set selected service and show schedule
       setSelectedService(opt);
-      // visually mark the clicked button
       list.querySelectorAll('.option-choice').forEach(b=>b.classList.remove('selected'));
       btn.classList.add('selected');
     };
@@ -243,26 +306,24 @@ function showSection(category){
   });
 }
 
-/* Go back to main menu */
+/* go back to main menu */
 function goBack(){
   $('mainMenu').classList.remove('hidden');
   $('categorySection').classList.add('hidden');
-  // clear selections
   clearSelectedService();
 }
 
-/* ========== Selected service preview management ========== */
+/* selection preview */
 function setSelectedService(serviceName){
   currentService = serviceName;
   $('selectedService').innerText = serviceName;
   $('selectedPreview').style.display = 'block';
-  // show schedule area (schedule controls always visible in the form, but ensure ASAP toggle is reset)
   isASAP = false;
   $('asapBtn').classList.remove('bg-green-100');
   $('scheduleDate').disabled = false;
   $('scheduleTime').disabled = false;
 
-  // Optionally prefill schedule date/time (30 minutes from now) for convenience
+  // prefill schedule 30 minutes from now if empty
   try {
     const now = new Date();
     const plus30 = new Date(now.getTime() + 30*60000);
@@ -274,23 +335,10 @@ function setSelectedService(serviceName){
     }
   } catch(e){}
 }
+function hideSelectedPreview(){ $('selectedPreview').style.display='none'; $('selectedService').innerText=''; }
+function clearSelectedService(){ currentService=''; hideSelectedPreview(); $('requestDetails').value=''; $('scheduleDate').value=''; $('scheduleTime').value=''; isASAP=false; $('asapBtn').classList.remove('bg-green-100'); }
 
-function hideSelectedPreview(){
-  $('selectedPreview').style.display = 'none';
-  $('selectedService').innerText = '';
-}
-
-function clearSelectedService(){
-  currentService = '';
-  hideSelectedPreview();
-  $('requestDetails').value = '';
-  $('scheduleDate').value = '';
-  $('scheduleTime').value = '';
-  isASAP = false;
-  $('asapBtn').classList.remove('bg-green-100');
-}
-
-/* ====== NEW: schedule controls logic ====== */
+/* ---------- schedule controls ---------- */
 let isASAP = false;
 $('asapBtn').addEventListener('click', ()=>{
   isASAP = !isASAP;
@@ -305,30 +353,21 @@ $('asapBtn').addEventListener('click', ()=>{
   }
 });
 
-/* ====== Request submit (updated to include scheduled_at) ====== */
+/* ---------- request submit ---------- */
 $('requestForm').onsubmit = function(e){
   e.preventDefault();
-
-  // Must have a selected service
   if(!currentService){
     alert('Please select a service / item first.');
     return;
   }
-
   const details = $('requestDetails').value.trim();
-
-  // scheduled logic
   let scheduled_at = null;
-  if(isASAP){
-    scheduled_at = 'ASAP';
-  } else {
+  if(isASAP) scheduled_at = 'ASAP';
+  else {
     const d = $('scheduleDate').value;
     const t = $('scheduleTime').value;
-    if(d && t){
-      scheduled_at = new Date(d + 'T' + t).toISOString();
-    } else {
-      scheduled_at = 'ASAP';
-    }
+    if(d && t) scheduled_at = new Date(d + 'T' + t).toISOString();
+    else scheduled_at = 'ASAP';
   }
 
   const req = {
@@ -356,138 +395,96 @@ $('requestForm').onsubmit = function(e){
       closeModal();
       alert('Request submitted!');
       $('requestForm').reset();
-      // reset selection & schedule
       clearSelectedService();
       goBack();
     }
   });
 };
 
-/* CART LOGIC (unchanged) */
-function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
-function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
+/* ---------- CART UI actions ---------- */
+$('cartBtn').addEventListener('click', ()=>{ $('cartPanel').style.transform='translateX(0)'; renderCart(); });
+$('closeCartBtn').addEventListener('click', ()=>{ $('cartPanel').style.transform='translateX(100%)'; });
+$('clearCartBtn').addEventListener('click', ()=>{ if(confirm('Clear cart?')) clearCart(); });
 
-function addToCart(name,price){
-  let cart = getCart();
-  let f = cart.find(x=>x.name===name && x.price===price);
-  if(f) f.qty++; else cart.push({name,price,qty:1});
-  setCart(cart);
-  openCart();
-}
+$('cartPanel').addEventListener('click', (e)=>{
+  const t = e.target;
+  if(t.classList.contains('inc')) changeQty(Number(t.dataset.i), 1);
+  if(t.classList.contains('dec')) changeQty(Number(t.dataset.i), -1);
+  if(t.classList.contains('del')) { let idx = Number(t.dataset.i); let cart=getCart(); cart.splice(idx,1); setCart(cart); renderCart(); }
+});
 
+/* place order from cart */
+$('placeOrderBtn').addEventListener('click', ()=>{
+  const cart = getCart();
+  if(!cart.length) return alert('Cart is empty!');
+  let subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  // confirm room
+  const room = prompt('Enter Room Number');
+  if(!room) return;
+  const details = cart.map(i=>`${i.name} × ${i.qty}`).join('; ');
+  const req = {
+    type:'Food',service:'Order',name:'Guest',room,
+    details, status:'Pending',assigned_to:'',
+    time:new Date().toLocaleString(),
+    created_at:new Date().toISOString(),
+    scheduled_at:'ASAP'
+  };
+  let all = JSON.parse(localStorage.getItem('requests')||'[]');
+  all.push(req);
+  localStorage.setItem('requests', JSON.stringify(all));
+  clearCart();
+  $('cartPanel').style.transform='translateX(100%)';
+  alert('Order placed!');
+});
+
+/* cart panel event delegation for +/-/remove */
+document.addEventListener('click', function(e){
+  const t = e.target;
+  if(t.matches('#cartItems .inc')) { changeQty(Number(t.dataset.i),1); }
+  if(t.matches('#cartItems .dec')) { changeQty(Number(t.dataset.i),-1); }
+});
+
+/* renderCart helper uses buttons with classes inc/dec/del and data-i; implement accordingly */
 function renderCart(){
   const cart = getCart();
-  $('cartItems').innerHTML = '';
-  let subtotal = 0;
-
+  const container = $('cartItems');
+  container.innerHTML = '';
+  let subtotal=0;
   cart.forEach((it,i)=>{
-    subtotal += it.qty * it.price;
-    $('cartItems').innerHTML += `
-      <div class="flex justify-between bg-gray-100 p-3 rounded">
-        <div>
-          <div class="font-semibold">${it.name}</div>
-          <div class="text-sm text-gray-600">₹${it.price} × ${it.qty}</div>
-        </div>
-        <div class="flex items-center gap-2">
-          <button class="px-3 py-1 bg-gray-200 dec" data-i="${i}">-</button>
-          <button class="px-3 py-1 bg-gray-200 inc" data-i="${i}">+</button>
-          <button class="text-red-600 del" data-i="${i}">Remove</button>
-        </div>
-      </div>`;
+    subtotal += it.price*it.qty;
+    const div = document.createElement('div');
+    div.className = 'flex justify-between bg-gray-100 p-3 rounded';
+    div.innerHTML = `
+      <div>
+        <div class="font-semibold">${it.name}</div>
+        <div class="text-sm text-gray-600">₹${it.price} × ${it.qty}</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="px-3 py-1 bg-gray-200 dec" data-i="${i}">-</button>
+        <button class="px-3 py-1 bg-gray-200 inc" data-i="${i}">+</button>
+        <button class="text-red-600 del" data-i="${i}">Remove</button>
+      </div>
+    `;
+    container.appendChild(div);
   });
-
   $('cartSubtotal').innerText = '₹'+subtotal;
+  updateCartBadge();
 }
 
-function openCart(){
-  $('cartOverlay').classList.remove('hidden');
-  $('cartPanel').style.transform='translateX(0)';
+/* helper: updateCartBadge already defined above; ensure it's called on load */
+function init(){
   renderCart();
+  updateCartBadge();
+  // clear schedule inputs initially
+  $('scheduleDate').value = '';
+  $('scheduleTime').value = '';
 }
 
-function closeCart(){
-  $('cartOverlay').classList.add('hidden');
-  $('cartPanel').style.transform='translateX(100%)';
-}
+document.addEventListener('DOMContentLoaded', init);
 
-$('closeCartBtn').onclick = closeCart;
-$('clearCartBtn').onclick = ()=>{
-  if(confirm('Clear cart?')){ setCart([]); renderCart(); }
-};
-$('cartOverlay').onclick = closeCart;
-
-$('cartItems').onclick = function(e){
-  const t=e.target;
-  const cart = getCart();
-  const i = Number(t.dataset.i);
-
-  if(t.classList.contains('inc')) cart[i].qty++;
-  if(t.classList.contains('dec')) cart[i].qty = Math.max(1,cart[i].qty-1);
-  if(t.classList.contains('del')) cart.splice(i,1);
-
-  setCart(cart);
-  renderCart();
-};
-
-$('placeOrderBtn').onclick = ()=>{
-  const cart = getCart();
-  if(!cart.length) return;
-
-  let subtotal = 0;
-  let rows = cart.map(i=>{
-    subtotal += i.qty * i.price;
-    return `<p>${i.name} × ${i.qty} — ₹${i.qty*i.price}</p>`;
-  }).join('');
-
-  let html = `
-    <h3 class="text-xl font-bold mb-3">Confirm Order</h3>
-    ${rows}
-    <p class="font-bold mt-2">Total: ₹${subtotal}</p>
-    <input id="orderRoom" placeholder="Enter room number" class="border w-full p-2 rounded mt-3"/>
-    <div class="flex justify-end gap-2 mt-4">
-      <button id="cnl" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
-      <button id="ok" class="px-4 py-2 bg-blue-600 text-white rounded">Confirm</button>
-    </div>`;
-
-  openModal(html);
-
-  $('cnl').onclick = closeModal;
-  $('ok').onclick = ()=>{
-    let room = $('orderRoom').value.trim();
-    if(!room) return alert('Enter room number');
-
-    let details = cart.map(i=>`${i.name} × ${i.qty}`).join('; ');
-
-    let req = {
-      type:'Food',service:'Order',name:'Guest',room,
-      details, status:'Pending',assigned_to:'',
-      time:new Date().toLocaleString(),
-      created_at:new Date().toISOString(),
-      scheduled_at: 'ASAP' // food orders are ASAP by default here
-    };
-
-    let all = JSON.parse(localStorage.getItem('requests')||'[]'); 
-    all.push(req);
-    localStorage.setItem('requests', JSON.stringify(all));
-
-    setCart([]);
-    closeModal();
-    closeCart();
-
-    alert('Order placed!');
-  };
-};
-
-/* Modal helpers */
-function openModal(html){
-  $('modalBox').innerHTML = html;
-  $('modalBackdrop').style.display='flex';
-}
-function closeModal(){
-  $('modalBackdrop').style.display='none';
-  $('modalBox').innerHTML='';
-}
-
+/* modal helpers (unchanged) */
+function openModal(html){ $('modalBox').innerHTML = html; $('modalBackdrop').style.display='flex'; }
+function closeModal(){ $('modalBackdrop').style.display='none'; $('modalBox').innerHTML=''; }
 function openRoomModal(opts){
   let html = `
     <h3 class="text-xl font-bold mb-3">${opts.title}</h3>
@@ -497,9 +494,7 @@ function openRoomModal(opts){
       <button id="rC" class="px-3 py-2 bg-gray-200 rounded">Cancel</button>
       <button id="rOK" class="px-3 py-2 bg-blue-600 text-white rounded">${opts.confirmText}</button>
     </div>`;
-
   openModal(html);
-
   $('rC').onclick = closeModal;
   $('rOK').onclick = ()=>{
     let room = $('roomInput').value.trim();
@@ -507,14 +502,6 @@ function openRoomModal(opts){
     opts.onConfirm(room);
   };
 }
-
-/* INIT */
-document.addEventListener('DOMContentLoaded', function(){
-  renderCart();
-  // ensure schedule controls cleared
-  $('scheduleDate').value = '';
-  $('scheduleTime').value = '';
-});
 </script>
 
 <footer class="text-center text-gray-700 text-sm mt-8">
