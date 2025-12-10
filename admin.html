@@ -41,6 +41,7 @@ tbody tr:hover td{background:#fbfcff}
 .action-group{display:flex;gap:8px;flex-wrap:wrap}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:2000}
 .modal{background:#fff;padding:16px;border-radius:10px;max-width:520px;width:94%;box-shadow:0 12px 30px rgba(2,6,23,0.12)}
+.small-muted{font-size:12px;color:#6b7280}
 </style>
 </head>
 
@@ -102,6 +103,7 @@ tbody tr:hover td{background:#fbfcff}
                 <th>Guest</th>
                 <th>Room</th>
                 <th>Time</th>
+                <th>Scheduled</th>
                 <th>Status</th>
                 <th>Action</th>
             </tr>
@@ -118,6 +120,17 @@ tbody tr:hover td{background:#fbfcff}
 function load(){ return JSON.parse(localStorage.getItem("requests") || "[]"); }
 function save(d){ localStorage.setItem("requests", JSON.stringify(d)); }
 
+// Format scheduled field safely
+function formatScheduled(s){
+    if(!s) return "";
+    if(s === "ASAP") return "ASAP";
+    // try parse
+    const d = new Date(s);
+    if(!isNaN(d)) return d.toLocaleString();
+    // fallback to raw string
+    return String(s);
+}
+
 // Render table
 function renderTable(){
     const all = load();
@@ -132,7 +145,7 @@ function renderTable(){
         if(cat && r.type !== cat) return;
         if(status && r.status !== status) return;
 
-        const hay = `${r.service} ${r.details} ${r.room} ${r.name}`.toLowerCase();
+        const hay = `${r.service} ${r.details || ""} ${r.room || ""} ${r.name || ""}`.toLowerCase();
         if(search && !hay.includes(search)) return;
 
         const nextBtn =
@@ -140,15 +153,18 @@ function renderTable(){
             r.status === "In Progress" ? "Complete" :
             "";
 
+        const scheduledText = formatScheduled(r.scheduled_at);
+
         tbody.insertAdjacentHTML("beforeend", `
         <tr>
             <td>${i+1}</td>
-            <td>${r.type}</td>
-            <td>${r.service} — <small>${r.details || ""}</small></td>
+            <td>${r.type || ""}</td>
+            <td>${r.service || ""} ${r.details ? '— <small class="small-muted">'+(r.details||"")+'</small>' : ''}</td>
             <td>${r.name || "Guest"}</td>
-            <td>${r.room}</td>
-            <td>${r.created_at || ""}</td>
-            <td><span class="status-badge status-${r.status.replace(" ","")}">${r.status}</span></td>
+            <td>${r.room || ""}</td>
+            <td>${r.created_at ? (new Date(r.created_at).toLocaleString()) : (r.time||"")}</td>
+            <td>${scheduledText}</td>
+            <td><span class="status-badge status-${(r.status||'').replace(" ","")}">${r.status || ""}</span></td>
             <td>
                 <div class="action-group">
                     ${nextBtn ? `<button class="btn btn-next" data-next="${i}">${nextBtn}</button>` : ""}
@@ -167,21 +183,27 @@ document.addEventListener("click", e => {
 
     if(e.target.dataset.next){
         const i = +e.target.dataset.next;
+        if(!all[i]) return;
         if(all[i].status === "Pending") all[i].status = "In Progress";
         else if(all[i].status === "In Progress") all[i].status = "Completed";
+        // record updated time
+        all[i].updated_at = new Date().toISOString();
         save(all);
         renderTable();
     }
 
     if(e.target.dataset.ignore){
         const i = +e.target.dataset.ignore;
+        if(!all[i]) return;
         all[i].status = "Ignored";
+        all[i].updated_at = new Date().toISOString();
         save(all);
         renderTable();
     }
 
     if(e.target.dataset.delete){
         const i = +e.target.dataset.delete;
+        if(!all[i]) return;
         all.splice(i,1);
         save(all);
         renderTable();
