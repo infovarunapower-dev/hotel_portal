@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
@@ -17,14 +17,11 @@
       width: 95%;
       box-shadow: 0 12px 30px rgba(0,0,0,0.12);
     }
+    .small-muted{ font-size:13px;color:#64748b }
   </style>
 </head>
 
 <body class="bg-gradient-to-br from-blue-100 via-white to-blue-200 min-h-screen p-6 flex flex-col justify-between">
-
-<!----------------------------->
-<!--     HEADER SECTION      -->
-<!----------------------------->
 
 <div class="text-center mb-6">
   <h1 class="text-3xl font-extrabold text-gray-800">
@@ -40,20 +37,10 @@
   </p>
 </div>
 
-
-<!----------------------------->
-<!--     HOME BUTTON         -->
-<!----------------------------->
-
 <a id="homeBtn" href="index.html"
    class="fixed top-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full border hover:bg-gray-100 transition">
   🏠 Home
 </a>
-
-
-<!----------------------------->
-<!--        MAIN MENU        -->
-<!----------------------------->
 
 <div id="mainPortal" class="flex flex-col items-center">
 
@@ -86,10 +73,6 @@
 
   </div>
 
-<!----------------------------->
-<!--      CATEGORY PANEL      -->
-<!----------------------------->
-
   <div id="categorySection"
        class="hidden w-full max-w-4xl bg-white p-8 mt-10 rounded-2xl shadow-xl relative">
 
@@ -97,6 +80,15 @@
     <div id="optionsList" class="flex flex-col gap-4 mb-6"></div>
 
     <form id="requestForm" class="space-y-4">
+      <label class="small-muted">Schedule</label>
+
+      <div id="scheduleControls" class="flex gap-3 items-center">
+        <input id="scheduleDate" type="date" class="border w-48 p-2 rounded" />
+        <input id="scheduleTime" type="time" class="border w-36 p-2 rounded" />
+        <button id="asapBtn" type="button" class="px-3 py-2 rounded border">ASAP</button>
+        <div class="small-muted">Or choose date & time</div>
+      </div>
+
       <textarea id="requestDetails" placeholder="Additional details..." class="border w-full p-3 rounded-md"></textarea>
 
       <div class="flex gap-2">
@@ -114,12 +106,6 @@
   </div>
 
 </div>
-
-
-
-<!----------------------------->
-<!--     CART + OVERLAY      -->
-<!----------------------------->
 
 <div id="cartOverlay" class="fixed inset-0 z-40 hidden bg-black/40"></div>
 
@@ -147,25 +133,12 @@
 
 </aside>
 
-
-
-
-<!----------------------------->
-<!--          MODAL          -->
-<!----------------------------->
-
 <div id="modalBackdrop" class="modal-backdrop">
   <div id="modalBox" class="modal"></div>
 </div>
 
-
-
-<!----------------------------->
-<!--     ORIGINAL SCRIPT     -->
-<!----------------------------->
-
 <script>
-/* ====== ALL ORIGINAL LOGIC BELOW — NO CHANGES MADE ====== */
+/* ====== FROM ORIGINAL (kept) — plus schedule handling in requestForm submit ====== */
 
 (function ensureSampleMenu(){
   try {
@@ -243,9 +216,41 @@ function goBack(){
   $('categorySection').classList.add('hidden');
 }
 
+/* ====== NEW: schedule controls logic ====== */
+let isASAP = false;
+$('asapBtn').addEventListener('click', ()=>{
+  isASAP = !isASAP;
+  if(isASAP){
+    $('asapBtn').classList.add('bg-green-100');
+    $('scheduleDate').disabled = true;
+    $('scheduleTime').disabled = true;
+  } else {
+    $('asapBtn').classList.remove('bg-green-100');
+    $('scheduleDate').disabled = false;
+    $('scheduleTime').disabled = false;
+  }
+});
+
+/* ====== Request submit (updated to include scheduled_at) ====== */
 $('requestForm').onsubmit = function(e){
   e.preventDefault();
   const details = $('requestDetails').value.trim();
+
+  // scheduled logic
+  let scheduled_at = null;
+  if(isASAP){
+    scheduled_at = 'ASAP';
+  } else {
+    const d = $('scheduleDate').value;
+    const t = $('scheduleTime').value;
+    if(d && t){
+      // combine and store ISO-formatted
+      scheduled_at = new Date(d + 'T' + t).toISOString();
+    } else {
+      // default: ASAP if nothing chosen
+      scheduled_at = 'ASAP';
+    }
+  }
 
   const req = {
     type: currentCategory,
@@ -255,7 +260,9 @@ $('requestForm').onsubmit = function(e){
     details,
     status:'Pending',
     assigned_to:'',
-    time:new Date().toLocaleString()
+    time:new Date().toLocaleString(),
+    created_at:new Date().toISOString(),
+    scheduled_at: scheduled_at
   };
 
   openRoomModal({
@@ -270,6 +277,13 @@ $('requestForm').onsubmit = function(e){
       closeModal();
       alert('Request submitted!');
       $('requestForm').reset();
+      // reset schedule UI
+      isASAP = false;
+      $('asapBtn').classList.remove('bg-green-100');
+      $('scheduleDate').disabled = false;
+      $('scheduleTime').disabled = false;
+      $('scheduleDate').value = '';
+      $('scheduleTime').value = '';
       goBack();
     }
   });
@@ -346,9 +360,9 @@ $('placeOrderBtn').onclick = ()=>{
   if(!cart.length) return;
 
   let subtotal = 0;
-  let rows = cart.map(it=>{
-    subtotal += it.qty * it.price;
-    return `<p>${it.name} × ${it.qty} — ₹${it.qty*it.price}</p>`;
+  let rows = cart.map(i=>{
+    subtotal += i.qty * i.price;
+    return `<p>${i.name} × ${i.qty} — ₹${i.qty*i.price}</p>`;
   }).join('');
 
   let html = `
@@ -373,7 +387,9 @@ $('placeOrderBtn').onclick = ()=>{
     let req = {
       type:'Food',service:'Order',name:'Guest',room,
       details, status:'Pending',assigned_to:'',
-      time:new Date().toLocaleString()
+      time:new Date().toLocaleString(),
+      created_at:new Date().toISOString(),
+      scheduled_at: 'ASAP' // food orders are ASAP by default here
     };
 
     let all = JSON.parse(localStorage.getItem('requests')||'[]'); 
@@ -422,12 +438,6 @@ function openRoomModal(opts){
 document.addEventListener('DOMContentLoaded', renderCart);
 
 </script>
-
-
-
-<!----------------------------->
-<!--        FOOTER           -->
-<!----------------------------->
 
 <footer class="text-center text-gray-700 text-sm mt-8">
   © Spice De Morjim — All rights reserved.
