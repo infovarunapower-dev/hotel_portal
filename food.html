@@ -33,10 +33,6 @@
             border-radius: 4px;
         }
 
-        .menu-section {
-            margin-bottom: 30px;
-        }
-
         .item {
             background: white;
             padding: 15px;
@@ -61,80 +57,218 @@
             background: #218838;
         }
 
-        #orderStatus {
-            margin-top: 20px;
-            padding: 15px;
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
+        #cartBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+
+        #cartPanel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 350px;
+            background: white;
+            box-shadow: -3px 0 10px rgba(0,0,0,0.2);
+            padding: 20px;
+            transform: translateX(100%);
+            transition: 0.3s;
+            overflow-y: auto;
+        }
+
+        .cart-item {
+            background: #f1f1f1;
+            padding: 10px;
+            margin-bottom: 10px;
             border-radius: 6px;
-            display: none;
+            display: flex;
+            justify-content: space-between;
         }
+
+        .btn-small {
+            padding: 5px 8px;
+            background: #ccc;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #placeOrder {
+            background: #28a745;
+            padding: 10px;
+            width: 100%;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        #closeCart {
+            float: right;
+            background: #dc3545;
+            padding: 5px 10px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
     </style>
-
-    <script>
-        function placeOrder(itemName) {
-            const statusBox = document.getElementById("orderStatus");
-            statusBox.style.display = "block";
-            statusBox.innerHTML =
-                "🍽️ Order placed for <b>" +
-                itemName +
-                "</b>. Staff will deliver shortly!";
-        }
-
-        function loadMenu() {
-            // Load menu data from localStorage
-            const menuData =
-                JSON.parse(localStorage.getItem("foodMenu")) || {};
-
-            const container = document.getElementById("menuContainer");
-            container.innerHTML = ""; // clear default content
-
-            // Loop categories
-            for (const category in menuData) {
-                const section = document.createElement("div");
-
-                section.innerHTML = `
-                    <h2>${category} Menu</h2>
-                    <div class="menu-section" id="sec-${category}"></div>
-                `;
-
-                container.appendChild(section);
-
-                const sectionDiv = section.querySelector(
-                    "#sec-" + CSS.escape(category)
-                );
-
-                // Loop items in category
-                menuData[category].forEach((item) => {
-                    const div = document.createElement("div");
-                    div.className = "item";
-                    div.innerHTML = `
-                        <span>${item.name} — ₹${item.price}</span>
-                        <button onclick="placeOrder('${item.name}')">Order</button>
-                    `;
-                    sectionDiv.appendChild(div);
-                });
-            }
-        }
-
-        window.onload = loadMenu;
-    </script>
 </head>
 
 <body>
 
 <header>
-    Hotel Food Ordering
+    Food Menu
 </header>
 
-<div class="container" id="menuContainer">
+<div class="container" id="menuContainer"></div>
 
-    <!-- Menu will load dynamically here -->
+<!-- Floating Cart Button -->
+<div id="cartBtn">🛒 Cart</div>
 
+<!-- Cart Panel -->
+<div id="cartPanel">
+    <button id="closeCart">Close</button>
+    <h2>Your Cart</h2>
+    <div id="cartItems"></div>
+    <h3>Total: ₹<span id="totalAmount">0</span></h3>
+    <button id="placeOrder">Place Order</button>
 </div>
 
-<!-- Output Message -->
-<div id="orderStatus"></div>
+<script>
+/* CART HANDLING */
+function getCart() {
+    return JSON.parse(localStorage.getItem("cart") || "[]");
+}
+
+function saveCart(cart) {
+    localStorage.setItem("cart", JSON.stringify(cart));
+}
+
+function addToCart(name, price) {
+    let cart = getCart();
+    let existing = cart.find(item => item.name === name);
+
+    if (existing) {
+        existing.qty++;
+    } else {
+        cart.push({ name, price, qty: 1 });
+    }
+
+    saveCart(cart);
+    renderCart();
+}
+
+function renderCart() {
+    let cart = getCart();
+    let cartHTML = "";
+    let total = 0;
+
+    cart.forEach((item, i) => {
+        total += item.price * item.qty;
+
+        cartHTML += `
+            <div class="cart-item">
+                <div>
+                    <b>${item.name}</b><br>
+                    ₹${item.price} × ${item.qty}
+                </div>
+                <div>
+                    <button class="btn-small" onclick="changeQty(${i}, -1)">-</button>
+                    <button class="btn-small" onclick="changeQty(${i}, 1)">+</button>
+                </div>
+            </div>
+        `;
+    });
+
+    document.getElementById("cartItems").innerHTML = cartHTML;
+    document.getElementById("totalAmount").innerText = total;
+}
+
+function changeQty(index, value) {
+    let cart = getCart();
+    cart[index].qty += value;
+
+    if (cart[index].qty <= 0) cart.splice(index, 1);
+
+    saveCart(cart);
+    renderCart();
+}
+
+/* SHOW/HIDE CART */
+document.getElementById("cartBtn").onclick = () => {
+    document.getElementById("cartPanel").style.transform = "translateX(0)";
+    renderCart();
+};
+
+document.getElementById("closeCart").onclick = () => {
+    document.getElementById("cartPanel").style.transform = "translateX(100%)";
+};
+
+/* PLACE ORDER */
+document.getElementById("placeOrder").onclick = () => {
+    let cart = getCart();
+    if (!cart.length) return alert("Cart is empty!");
+
+    let room = prompt("Enter Room Number");
+    if (!room) return;
+
+    let details = cart.map(i => `${i.name} × ${i.qty}`).join("; ");
+
+    let req = {
+        type: "Food",
+        service: "Order",
+        name: "Guest",
+        room,
+        details,
+        status: "Pending",
+        assigned_to: "",
+        time: new Date().toLocaleString(),
+        created_at: new Date().toISOString(),
+        scheduled_at: "ASAP"
+    };
+
+    let list = JSON.parse(localStorage.getItem("requests") || "[]");
+    list.push(req);
+    localStorage.setItem("requests", JSON.stringify(list));
+
+    saveCart([]); // clear cart
+    renderCart();
+    alert("Order placed successfully!");
+    document.getElementById("cartPanel").style.transform = "translateX(100%)";
+};
+
+/* LOAD FOOD MENU */
+function loadMenu() {
+    const menuData = JSON.parse(localStorage.getItem("foodMenu")) || {};
+    const container = document.getElementById("menuContainer");
+
+    container.innerHTML = "";
+
+    for (const category in menuData) {
+        container.innerHTML += `<h2>${category}</h2>`;
+        menuData[category].forEach(item => {
+            container.innerHTML += `
+                <div class="item">
+                    <span>${item.name} — ₹${item.price}</span>
+                    <button onclick="addToCart('${item.name}', ${item.price})">Add</button>
+                </div>
+            `;
+        });
+    }
+}
+
+window.onload = loadMenu;
+</script>
 
 </body>
 </html>
