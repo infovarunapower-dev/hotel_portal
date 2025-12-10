@@ -12,7 +12,7 @@ header{height:52px;background:#2563eb;color:#fff;display:flex;align-items:center
 header .brand{font-weight:700}
 header a{color:#fff;text-decoration:underline;font-size:13px;margin-left:12px}
 .layout{display:flex;min-height:calc(100vh - 52px)}
-.sidebar{width:220px;background:#fff;border-right:1px solid #e6eef6;padding:14px;display:flex;flex-direction:column;gap:6px}
+.sidebar{width:260px;background:#fff;border-right:1px solid #e6eef6;padding:14px;display:flex;flex-direction:column;gap:6px}
 .sidebar h3{font-size:13px;color:#64748b;margin:0 0 8px}
 .sb-item{padding:9px 10px;border-radius:6px;cursor:pointer;color:#334155;display:flex;align-items:center;gap:8px}
 .sb-item:hover{background:#f1f5f9}
@@ -40,8 +40,19 @@ tbody tr:hover td{background:#fbfcff}
 .btn-ghost{background:#fff;border:1px solid #e2e8f0;color:#334155}
 .action-group{display:flex;gap:8px;flex-wrap:wrap}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:2000}
-.modal{background:#fff;padding:16px;border-radius:10px;max-width:520px;width:94%;box-shadow:0 12px 30px rgba(2,6,23,0.12)}
+.modal{background:#fff;padding:16px;border-radius:10px;max-width:720px;width:94%;box-shadow:0 12px 30px rgba(2,6,23,0.12)}
 .small-muted{font-size:12px;color:#6b7280}
+
+/* Food editor styles */
+.food-editor { padding:18px; }
+.food-editor h4 { margin:0 0 8px; }
+.cat-box { border:1px dashed #e6eef6; padding:12px; border-radius:8px; margin-bottom:12px; background:#fbfdff; }
+.item-row { display:flex; gap:8px; align-items:center; margin-top:8px; }
+.item-row input { padding:8px; border-radius:6px; border:1px solid #e6eef6; }
+.item-row button { padding:6px 10px; border-radius:6px; cursor:pointer; }
+.small-btn { padding:6px 8px; border-radius:6px; border:1px solid #e6eef6; background:#fff; cursor:pointer; }
+.save-btn{ background:#10b981; color:#fff; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; }
+.cancel-btn{ background:#ef4444; color:#fff; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; margin-left:8px;}
 </style>
 </head>
 
@@ -92,7 +103,7 @@ tbody tr:hover td{background:#fbfcff}
     <button id="refreshBtn" class="btn-ghost">Refresh</button>
 </div>
 
-<!-- TABLE -->
+<!-- TABLE (Dashboard view) -->
 <div class="table-wrap" id="dashboardView">
     <table id="reqTable">
         <thead>
@@ -112,13 +123,29 @@ tbody tr:hover td{background:#fbfcff}
     </table>
 </div>
 
-<!-- Food page stub (will navigate to actual food.html if clicked) -->
-<div id="foodView" class="table-wrap" style="display:none;">
-  <div style="padding:18px">
-    <h3 style="margin:0 0 8px">Food Menu (Admin)</h3>
-    <p class="small-muted">Click the button below to open the food menu editor / preview.</p>
-    <div style="margin-top:12px">
-      <button id="openFoodBtn" class="btn-ghost">Open Food Page</button>
+<!-- Food editor view -->
+<div id="foodView" style="display:none;">
+  <div class="food-editor">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div>
+        <h3 style="margin:0">Food Menu Editor</h3>
+        <div class="small-muted">Add / edit categories and items. Changes will be saved to <code>localStorage.foodMenu</code> and will appear on the landing page.</div>
+      </div>
+      <div>
+        <button id="foodSave" class="save-btn">Save Changes</button>
+        <button id="foodDiscard" class="cancel-btn">Discard</button>
+      </div>
+    </div>
+
+    <div id="foodListContainer"></div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+      <input id="newCategoryName" placeholder="New category name (e.g. Dinner)" style="padding:8px;border-radius:6px;border:1px solid #e6eef6"/>
+      <button id="addCategoryBtn" class="small-btn">Add Category</button>
+    </div>
+
+    <div style="margin-top:18px;">
+      <button id="openLandingPreview" class="btn-ghost">Open Landing Page Preview</button>
     </div>
   </div>
 </div>
@@ -126,17 +153,27 @@ tbody tr:hover td{background:#fbfcff}
 </main>
 </div>
 
-<!-- Simple modal used by settings -->
+<!-- Modal used by settings -->
 <div id="modalBackdrop" class="modal-backdrop">
   <div id="modalBox" class="modal"></div>
 </div>
 
 <script>
-// Load & save
-function load(){ return JSON.parse(localStorage.getItem("requests") || "[]"); }
-function save(d){ localStorage.setItem("requests", JSON.stringify(d)); }
+// -------------------------------
+// Utilities - localStorage helpers
+// -------------------------------
+function loadRequests(){ return JSON.parse(localStorage.getItem("requests") || "[]"); }
+function saveRequests(d){ localStorage.setItem("requests", JSON.stringify(d)); }
 
-// Format scheduled field safely
+function loadFood(){ 
+  try { return JSON.parse(localStorage.getItem("foodMenu") || "{}"); } 
+  catch(e){ return {}; }
+}
+function saveFood(obj){ localStorage.setItem("foodMenu", JSON.stringify(obj)); }
+
+// -------------------------------
+// Dashboard table rendering
+// -------------------------------
 function formatScheduled(s){
     if(!s) return "";
     if(s === "ASAP") return "ASAP";
@@ -145,9 +182,8 @@ function formatScheduled(s){
     return String(s);
 }
 
-// Render table
 function renderTable(){
-    const all = load();
+    const all = loadRequests();
     const tbody = document.querySelector("#reqTable tbody");
     tbody.innerHTML = "";
 
@@ -191,9 +227,9 @@ function renderTable(){
     });
 }
 
-// Next step workflow
+// Next step workflow (start/complete/ignore/delete)
 document.addEventListener("click", e => {
-    const all = load();
+    const all = loadRequests();
 
     if(e.target.dataset.next){
         const i = +e.target.dataset.next;
@@ -201,7 +237,7 @@ document.addEventListener("click", e => {
         if(all[i].status === "Pending") all[i].status = "In Progress";
         else if(all[i].status === "In Progress") all[i].status = "Completed";
         all[i].updated_at = new Date().toISOString();
-        save(all);
+        saveRequests(all);
         renderTable();
     }
 
@@ -210,7 +246,7 @@ document.addEventListener("click", e => {
         if(!all[i]) return;
         all[i].status = "Ignored";
         all[i].updated_at = new Date().toISOString();
-        save(all);
+        saveRequests(all);
         renderTable();
     }
 
@@ -218,7 +254,7 @@ document.addEventListener("click", e => {
         const i = +e.target.dataset.delete;
         if(!all[i]) return;
         all.splice(i,1);
-        save(all);
+        saveRequests(all);
         renderTable();
     }
 });
@@ -230,8 +266,9 @@ statusFilter.addEventListener("change", renderTable);
 clearSearch.addEventListener("click", ()=>{ searchInput.value=""; renderTable(); });
 refreshBtn.addEventListener("click", renderTable);
 
-// =============== Sidebar navigation handling ===============
-// Adds click handling to sidebar items via data-action attributes
+// -------------------------------
+// Sidebar navigation handling
+// -------------------------------
 document.querySelectorAll('.sb-item').forEach(item=>{
   item.addEventListener('click', ()=> {
     // visual active toggle
@@ -240,29 +277,176 @@ document.querySelectorAll('.sb-item').forEach(item=>{
 
     const action = item.dataset.action;
     if(action === 'dashboard'){
-      // show dashboard view
       document.getElementById('dashboardView').style.display = '';
       document.getElementById('foodView').style.display = 'none';
-      // ensure table refreshed
       renderTable();
     } else if(action === 'food-menu'){
-      // show a lightweight admin food view and provide a button to open the full food page
       document.getElementById('dashboardView').style.display = 'none';
       document.getElementById('foodView').style.display = '';
+      loadFoodEditor();
     } else if(action === 'settings'){
-      // open settings modal
       openSettingsModal();
     }
   });
 });
 
-// Food view button (opens the actual food.html page)
-document.getElementById('openFoodBtn').addEventListener('click', ()=> {
-  // open food management page in a new tab for editing/preview
-  window.open('food.html', '_blank');
+// -------------------------------
+// Food menu editor
+// -------------------------------
+let foodDraft = {}; // local edit copy
+
+function createCategoryBox(catName, items){
+  const wrapper = document.createElement('div');
+  wrapper.className = 'cat-box';
+  wrapper.dataset.cat = catName;
+
+  const header = document.createElement('div');
+  header.style.display = 'flex';
+  header.style.justifyContent = 'space-between';
+  header.style.alignItems = 'center';
+
+  const title = document.createElement('h4');
+  title.innerText = catName;
+  title.style.margin = '0';
+
+  const headerRight = document.createElement('div');
+
+  const renameBtn = document.createElement('button');
+  renameBtn.className = 'small-btn';
+  renameBtn.innerText = 'Rename';
+  renameBtn.onclick = ()=> {
+    const newName = prompt('Rename category', catName);
+    if(newName && newName.trim()){
+      // rename in draft
+      if(foodDraft[newName]) { alert('Category exists'); return; }
+      foodDraft[newName] = foodDraft[catName];
+      delete foodDraft[catName];
+      loadFoodEditor();
+    }
+  };
+
+  const delCatBtn = document.createElement('button');
+  delCatBtn.className = 'small-btn';
+  delCatBtn.style.marginLeft = '8px';
+  delCatBtn.innerText = 'Delete Category';
+  delCatBtn.onclick = ()=> {
+    if(confirm('Delete category "'+catName+'"?')) {
+      delete foodDraft[catName];
+      loadFoodEditor();
+    }
+  };
+
+  headerRight.appendChild(renameBtn);
+  headerRight.appendChild(delCatBtn);
+
+  header.appendChild(title);
+  header.appendChild(headerRight);
+  wrapper.appendChild(header);
+
+  // items list
+  const itemsDiv = document.createElement('div');
+  itemsDiv.style.marginTop = '8px';
+
+  (items || []).forEach((it, idx) => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <input class="item-name" value="${escapeHtml(it.name)}" />
+      <input class="item-price" value="${escapeHtml(String(it.price))}" style="width:110px" />
+      <button class="small-btn edit-item">Save</button>
+      <button class="small-btn remove-item" style="margin-left:6px">Remove</button>
+    `;
+    // attach handlers
+    row.querySelector('.edit-item').onclick = ()=> {
+      const newName = row.querySelector('.item-name').value.trim();
+      const newPrice = row.querySelector('.item-price').value.trim();
+      if(!newName || isNaN(Number(newPrice))) return alert('Enter valid name and numeric price');
+      foodDraft[catName][idx] = { name: newName, price: String(Number(newPrice)) };
+      loadFoodEditor();
+    };
+    row.querySelector('.remove-item').onclick = ()=> {
+      if(confirm('Remove "'+it.name+'"?')) {
+        foodDraft[catName].splice(idx,1);
+        loadFoodEditor();
+      }
+    };
+    itemsDiv.appendChild(row);
+  });
+
+  // add item row
+  const addRow = document.createElement('div');
+  addRow.className = 'item-row';
+  addRow.style.marginTop = '10px';
+  addRow.innerHTML = `
+    <input class="new-item-name" placeholder="Item name" />
+    <input class="new-item-price" placeholder="Price" style="width:110px" />
+    <button class="small-btn add-item">Add Item</button>
+  `;
+  addRow.querySelector('.add-item').onclick = ()=> {
+    const nm = addRow.querySelector('.new-item-name').value.trim();
+    const pr = addRow.querySelector('.new-item-price').value.trim();
+    if(!nm || isNaN(Number(pr))) return alert('Enter valid name and numeric price');
+    if(!foodDraft[catName]) foodDraft[catName] = [];
+    foodDraft[catName].push({ name: nm, price: String(Number(pr)) });
+    loadFoodEditor();
+  };
+
+  wrapper.appendChild(itemsDiv);
+  wrapper.appendChild(addRow);
+  return wrapper;
+}
+
+function loadFoodEditor(){
+  // load from localStorage into draft copy
+  foodDraft = JSON.parse(JSON.stringify(loadFood() || {}));
+
+  const container = document.getElementById('foodListContainer');
+  container.innerHTML = '';
+  const keys = Object.keys(foodDraft);
+  if(keys.length === 0){
+    container.innerHTML = '<div class="small-muted">No categories yet. Add one below.</div>';
+  } else {
+    keys.forEach(k=>{
+      container.appendChild(createCategoryBox(k, foodDraft[k]));
+    });
+  }
+  // prefill new category input
+  document.getElementById('newCategoryName').value = '';
+}
+
+// add new category
+document.getElementById('addCategoryBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('newCategoryName').value.trim();
+  if(!name) return alert('Enter a category name');
+  if(!foodDraft) foodDraft = {};
+  if(foodDraft[name]) return alert('Category already exists');
+  foodDraft[name] = [];
+  loadFoodEditor();
 });
 
-// ================= Settings modal =================
+// Save / Discard
+document.getElementById('foodSave').addEventListener('click', ()=>{
+  // write foodDraft to localStorage
+  saveFood(foodDraft);
+  // Notify other tabs by setting a timestamp key (storage event fires in other tabs)
+  try {
+    localStorage.setItem('foodMenu_updated_at', new Date().toISOString());
+  } catch(e){}
+  alert('Food menu saved. Landing page will reflect changes (reload if needed).');
+});
+
+document.getElementById('foodDiscard').addEventListener('click', ()=>{
+  if(confirm('Discard all unsaved changes?')) loadFoodEditor();
+});
+
+// open landing page preview
+document.getElementById('openLandingPreview').addEventListener('click', ()=>{
+  window.open('index.html', '_blank');
+});
+
+// -------------------------------
+// Settings modal (small utility actions)
+// -------------------------------
 function openSettingsModal(){
   const html = `
     <h3 style="margin:0 0 10px">Settings</h3>
@@ -285,7 +469,7 @@ function openSettingsModal(){
   });
 
   document.getElementById('exportReq').addEventListener('click', ()=>{
-    const data = JSON.stringify(load(), null, 2);
+    const data = JSON.stringify(loadRequests(), null, 2);
     const blob = new Blob([data], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -295,16 +479,18 @@ function openSettingsModal(){
 }
 
 // Modal helpers
-function openModal(html){
-  document.getElementById('modalBox').innerHTML = html;
-  document.getElementById('modalBackdrop').style.display = 'flex';
-}
-function closeModal(){
-  document.getElementById('modalBackdrop').style.display = 'none';
-  document.getElementById('modalBox').innerHTML = '';
+function openModal(html){ document.getElementById('modalBox').innerHTML = html; document.getElementById('modalBackdrop').style.display = 'flex'; }
+function closeModal(){ document.getElementById('modalBackdrop').style.display = 'none'; document.getElementById('modalBox').innerHTML = ''; }
+
+// -------------------------------
+// Misc & Init
+// -------------------------------
+
+// very small helper to avoid HTML injection in inputs shown above
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Init
 renderTable();
 </script>
 
