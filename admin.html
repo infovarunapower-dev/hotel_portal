@@ -93,7 +93,7 @@ tbody tr:hover td{background:#fbfcff}
 </div>
 
 <!-- TABLE -->
-<div class="table-wrap">
+<div class="table-wrap" id="dashboardView">
     <table id="reqTable">
         <thead>
             <tr>
@@ -112,7 +112,23 @@ tbody tr:hover td{background:#fbfcff}
     </table>
 </div>
 
+<!-- Food page stub (will navigate to actual food.html if clicked) -->
+<div id="foodView" class="table-wrap" style="display:none;">
+  <div style="padding:18px">
+    <h3 style="margin:0 0 8px">Food Menu (Admin)</h3>
+    <p class="small-muted">Click the button below to open the food menu editor / preview.</p>
+    <div style="margin-top:12px">
+      <button id="openFoodBtn" class="btn-ghost">Open Food Page</button>
+    </div>
+  </div>
+</div>
+
 </main>
+</div>
+
+<!-- Simple modal used by settings -->
+<div id="modalBackdrop" class="modal-backdrop">
+  <div id="modalBox" class="modal"></div>
 </div>
 
 <script>
@@ -124,10 +140,8 @@ function save(d){ localStorage.setItem("requests", JSON.stringify(d)); }
 function formatScheduled(s){
     if(!s) return "";
     if(s === "ASAP") return "ASAP";
-    // try parse
     const d = new Date(s);
     if(!isNaN(d)) return d.toLocaleString();
-    // fallback to raw string
     return String(s);
 }
 
@@ -186,7 +200,6 @@ document.addEventListener("click", e => {
         if(!all[i]) return;
         if(all[i].status === "Pending") all[i].status = "In Progress";
         else if(all[i].status === "In Progress") all[i].status = "Completed";
-        // record updated time
         all[i].updated_at = new Date().toISOString();
         save(all);
         renderTable();
@@ -216,6 +229,80 @@ categoryFilter.addEventListener("change", renderTable);
 statusFilter.addEventListener("change", renderTable);
 clearSearch.addEventListener("click", ()=>{ searchInput.value=""; renderTable(); });
 refreshBtn.addEventListener("click", renderTable);
+
+// =============== Sidebar navigation handling ===============
+// Adds click handling to sidebar items via data-action attributes
+document.querySelectorAll('.sb-item').forEach(item=>{
+  item.addEventListener('click', ()=> {
+    // visual active toggle
+    document.querySelectorAll('.sb-item').forEach(s => s.classList.remove('active'));
+    item.classList.add('active');
+
+    const action = item.dataset.action;
+    if(action === 'dashboard'){
+      // show dashboard view
+      document.getElementById('dashboardView').style.display = '';
+      document.getElementById('foodView').style.display = 'none';
+      // ensure table refreshed
+      renderTable();
+    } else if(action === 'food-menu'){
+      // show a lightweight admin food view and provide a button to open the full food page
+      document.getElementById('dashboardView').style.display = 'none';
+      document.getElementById('foodView').style.display = '';
+    } else if(action === 'settings'){
+      // open settings modal
+      openSettingsModal();
+    }
+  });
+});
+
+// Food view button (opens the actual food.html page)
+document.getElementById('openFoodBtn').addEventListener('click', ()=> {
+  // open food management page in a new tab for editing/preview
+  window.open('food.html', '_blank');
+});
+
+// ================= Settings modal =================
+function openSettingsModal(){
+  const html = `
+    <h3 style="margin:0 0 10px">Settings</h3>
+    <p class="small-muted">Admin settings — quick actions</p>
+    <div style="margin-top:12px">
+      <button id="clearReq" class="btn-ghost" style="margin-right:8px">Clear All Requests</button>
+      <button id="exportReq" class="btn-ghost">Export Requests (JSON)</button>
+    </div>
+    <div style="margin-top:12px" class="small-muted">Close this modal when done.</div>
+  `;
+  openModal(html);
+
+  document.getElementById('clearReq').addEventListener('click', ()=>{
+    if(confirm('Clear ALL requests? This cannot be undone.')) {
+      localStorage.removeItem('requests');
+      renderTable();
+      closeModal();
+      alert('All requests cleared.');
+    }
+  });
+
+  document.getElementById('exportReq').addEventListener('click', ()=>{
+    const data = JSON.stringify(load(), null, 2);
+    const blob = new Blob([data], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'requests.json';
+    a.click();
+  });
+}
+
+// Modal helpers
+function openModal(html){
+  document.getElementById('modalBox').innerHTML = html;
+  document.getElementById('modalBackdrop').style.display = 'flex';
+}
+function closeModal(){
+  document.getElementById('modalBackdrop').style.display = 'none';
+  document.getElementById('modalBox').innerHTML = '';
+}
 
 // Init
 renderTable();
