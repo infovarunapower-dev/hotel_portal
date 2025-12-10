@@ -17,6 +17,8 @@
       width: 95%;
       box-shadow: 0 12px 30px rgba(0,0,0,0.12);
     }
+    .selected-pill { display:inline-block; background:#eef2ff; color:#1e3a8a; padding:6px 10px; border-radius:999px; font-weight:600; margin-top:8px; }
+    .option-btn.selected { background:#bfdbfe; }
     .small-muted{ font-size:13px;color:#64748b }
   </style>
 </head>
@@ -51,22 +53,22 @@
   <div id="mainMenu" class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl mx-auto">
 
     <!-- HOUSEKEEPING -->
-    <button onclick="showSection('housekeeping')"
-      class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
+    <button id="opt-housekeeping" onclick="showSection('housekeeping')"
+      class="option-btn bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
       🧹
       <h2 class="text-xl font-semibold mt-2">Housekeeping</h2>
     </button>
 
     <!-- TRAVEL -->
-    <button onclick="showSection('travel')"
-      class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
+    <button id="opt-travel" onclick="showSection('travel')"
+      class="option-btn bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
       🚗
       <h2 class="text-xl font-semibold mt-2">Travel</h2>
     </button>
 
     <!-- FOOD MENU -->
-    <button onclick="showSection('food')"
-      class="bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
+    <button id="opt-food" onclick="showSection('food')"
+      class="option-btn bg-white rounded-2xl p-8 shadow-lg hover:scale-105 transition text-center">
       🍽️
       <h2 class="text-xl font-semibold mt-2">Food Menu</h2>
     </button>
@@ -76,7 +78,14 @@
   <div id="categorySection"
        class="hidden w-full max-w-4xl bg-white p-8 mt-10 rounded-2xl shadow-xl relative">
 
-    <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+    <h2 id="categoryTitle" class="text-2xl font-bold text-gray-800 mb-2"></h2>
+
+    <!-- Selected service preview (appears after user clicks an option) -->
+    <div id="selectedPreview" class="mb-4" style="display:none;">
+      <div>Selected:</div>
+      <div id="selectedService" class="selected-pill"></div>
+    </div>
+
     <div id="optionsList" class="flex flex-col gap-4 mb-6"></div>
 
     <form id="requestForm" class="space-y-4">
@@ -92,7 +101,7 @@
       <textarea id="requestDetails" placeholder="Additional details..." class="border w-full p-3 rounded-md"></textarea>
 
       <div class="flex gap-2">
-        <button type="submit"
+        <button id="submitRequestBtn" type="submit"
                 class="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 flex-1">
           Submit Request
         </button>
@@ -138,7 +147,7 @@
 </div>
 
 <script>
-/* ====== FROM ORIGINAL (kept) — plus schedule handling in requestForm submit ====== */
+/* ====== FROM ORIGINAL (kept) — plus selection+schedule handling ====== */
 
 (function ensureSampleMenu(){
   try {
@@ -164,14 +173,23 @@ const services = {
   food: { title: '🍽️ Food Menu', dynamic: true }
 };
 
+/* Show section and render options */
 function showSection(category){
   currentCategory = category;
   currentService = '';
+
+  // update UI highlight on the main tiles
+  document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+  const optBtn = document.getElementById('opt-' + category);
+  if(optBtn) optBtn.classList.add('selected');
 
   const section = services[category];
   $('mainMenu').classList.add('hidden');
   $('categorySection').classList.remove('hidden');
   $('categoryTitle').innerText = section.title;
+
+  // clear selection preview
+  hideSelectedPreview();
 
   const list = $('optionsList');
   list.innerHTML = '';
@@ -186,6 +204,7 @@ function showSection(category){
       list.appendChild(h);
 
       (menu[cat]||[]).forEach(item=>{
+        // each food row now has a "Select for scheduling" button and existing "Add to Cart"
         const row = document.createElement('div');
         row.className='flex items-center justify-between bg-gray-100 p-4 rounded-lg';
         row.innerHTML = `
@@ -193,8 +212,15 @@ function showSection(category){
             <div class="font-semibold">${item.name}</div>
             <div class="text-sm text-gray-600">₹${item.price}</div>
           </div>
-          <button class="bg-green-600 text-white px-3 py-1 rounded add-cart">Add to Cart</button>
+          <div class="flex gap-2">
+            <button class="bg-indigo-500 text-white px-3 py-1 rounded select-item">Select</button>
+            <button class="bg-green-600 text-white px-3 py-1 rounded add-cart">Add to Cart</button>
+          </div>
         `;
+        // select to schedule this food item
+        row.querySelector('.select-item').addEventListener('click', ()=> {
+          setSelectedService(item.name);
+        });
         row.querySelector('.add-cart').addEventListener('click', ()=> addToCart(item.name, Number(item.price)));
         list.appendChild(row);
       });
@@ -204,16 +230,64 @@ function showSection(category){
 
   section.options.forEach(opt=>{
     const btn = document.createElement('button');
-    btn.className = 'bg-gray-100 hover:bg-blue-200 font-semibold py-3 rounded-lg';
+    btn.className = 'bg-gray-100 hover:bg-blue-200 font-semibold py-3 rounded-lg option-choice';
     btn.innerText = opt;
-    btn.onclick = ()=> currentService = opt;
+    btn.onclick = ()=> {
+      // set selected service and show schedule
+      setSelectedService(opt);
+      // visually mark the clicked button
+      list.querySelectorAll('.option-choice').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+    };
     list.appendChild(btn);
   });
 }
 
+/* Go back to main menu */
 function goBack(){
   $('mainMenu').classList.remove('hidden');
   $('categorySection').classList.add('hidden');
+  // clear selections
+  clearSelectedService();
+}
+
+/* ========== Selected service preview management ========== */
+function setSelectedService(serviceName){
+  currentService = serviceName;
+  $('selectedService').innerText = serviceName;
+  $('selectedPreview').style.display = 'block';
+  // show schedule area (schedule controls always visible in the form, but ensure ASAP toggle is reset)
+  isASAP = false;
+  $('asapBtn').classList.remove('bg-green-100');
+  $('scheduleDate').disabled = false;
+  $('scheduleTime').disabled = false;
+
+  // Optionally prefill schedule date/time (30 minutes from now) for convenience
+  try {
+    const now = new Date();
+    const plus30 = new Date(now.getTime() + 30*60000);
+    if(!$('scheduleDate').value) $('scheduleDate').value = plus30.toISOString().slice(0,10);
+    if(!$('scheduleTime').value){
+      const hh = String(plus30.getHours()).padStart(2,'0');
+      const mm = String(plus30.getMinutes()).padStart(2,'0');
+      $('scheduleTime').value = hh + ':' + mm;
+    }
+  } catch(e){}
+}
+
+function hideSelectedPreview(){
+  $('selectedPreview').style.display = 'none';
+  $('selectedService').innerText = '';
+}
+
+function clearSelectedService(){
+  currentService = '';
+  hideSelectedPreview();
+  $('requestDetails').value = '';
+  $('scheduleDate').value = '';
+  $('scheduleTime').value = '';
+  isASAP = false;
+  $('asapBtn').classList.remove('bg-green-100');
 }
 
 /* ====== NEW: schedule controls logic ====== */
@@ -234,6 +308,13 @@ $('asapBtn').addEventListener('click', ()=>{
 /* ====== Request submit (updated to include scheduled_at) ====== */
 $('requestForm').onsubmit = function(e){
   e.preventDefault();
+
+  // Must have a selected service
+  if(!currentService){
+    alert('Please select a service / item first.');
+    return;
+  }
+
   const details = $('requestDetails').value.trim();
 
   // scheduled logic
@@ -244,10 +325,8 @@ $('requestForm').onsubmit = function(e){
     const d = $('scheduleDate').value;
     const t = $('scheduleTime').value;
     if(d && t){
-      // combine and store ISO-formatted
       scheduled_at = new Date(d + 'T' + t).toISOString();
     } else {
-      // default: ASAP if nothing chosen
       scheduled_at = 'ASAP';
     }
   }
@@ -277,13 +356,8 @@ $('requestForm').onsubmit = function(e){
       closeModal();
       alert('Request submitted!');
       $('requestForm').reset();
-      // reset schedule UI
-      isASAP = false;
-      $('asapBtn').classList.remove('bg-green-100');
-      $('scheduleDate').disabled = false;
-      $('scheduleTime').disabled = false;
-      $('scheduleDate').value = '';
-      $('scheduleTime').value = '';
+      // reset selection & schedule
+      clearSelectedService();
       goBack();
     }
   });
@@ -435,8 +509,12 @@ function openRoomModal(opts){
 }
 
 /* INIT */
-document.addEventListener('DOMContentLoaded', renderCart);
-
+document.addEventListener('DOMContentLoaded', function(){
+  renderCart();
+  // ensure schedule controls cleared
+  $('scheduleDate').value = '';
+  $('scheduleTime').value = '';
+});
 </script>
 
 <footer class="text-center text-gray-700 text-sm mt-8">
